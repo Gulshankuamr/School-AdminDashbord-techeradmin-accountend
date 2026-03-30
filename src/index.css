@@ -83,11 +83,12 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--sidebar));
+ background: grey; /* blue */
+ 
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+ background: whitesmoke; /* blue */
   border-radius: 4px;
 }
 

@@ -24,10 +24,10 @@ function FloatingLabel({ children, icon: Icon, color, style, delay = 0 }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.7 }}
-      animate={{ opacity: 1, scale: 1 }} // ❌ y animation hata diya
+      animate={{ opacity: 1, scale: 1 }}
       transition={{
         opacity: { delay, duration: 0.4 },
-        scale: { delay, duration: 0.4 },
+        scale:   { delay, duration: 0.4 },
       }}
       className="absolute flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-white/60 z-20 select-none"
       style={style}
@@ -38,13 +38,11 @@ function FloatingLabel({ children, icon: Icon, color, style, delay = 0 }) {
       >
         <Icon size={11} style={{ color }} />
       </div>
-
-      <span className="text-xs font-bold whitespace-nowrap text-slate-700">
-        {children}
-      </span>
+      <span className="text-xs font-bold whitespace-nowrap text-slate-700">{children}</span>
     </motion.div>
   )
 }
+
 /* ─── Main ───────────────────────────────────────────────────── */
 function LoginPage() {
   const navigate = useNavigate()
@@ -80,7 +78,7 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: "'Nunito', sans-serif" }}>
+    <div className="h-screen flex overflow-hidden" style={{ fontFamily: "'Nunito', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');`}</style>
 
       {/* ══════════ LEFT PANEL ══════════ */}
@@ -88,7 +86,7 @@ function LoginPage() {
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="hidden lg:flex flex-col justify-between relative overflow-hidden px-14 py-12"
+        className="hidden lg:flex flex-col relative overflow-hidden px-14 pt-7 pb-10"
         style={{
           flex: '0 0 58%',
           background: 'linear-gradient(145deg,#eef2ff 0%,#e0e7ff 35%,#dbeafe 65%,#d1fae5 100%)',
@@ -100,54 +98,55 @@ function LoginPage() {
         <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full"
           style={{ background: 'radial-gradient(circle,rgba(52,211,153,.18),transparent 70%)' }} />
 
-        {/* Logo */}
-        <div className="relative z-10">
-          <img
-            src="https://www.connectskool.com/assets/images/logo.png"
-            alt="ConnectSkool – Empowering Learning"
-            className="h-14 w-auto object-contain"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none'
-              document.getElementById('cs-logo-fallback').style.display = 'flex'
-            }}
-          />
+        {/* ── Logo ── tight to top, no extra gap */}
+        <div className="relative z-10 flex-shrink-0 -mt-8">
+<img
+  src="/logoconnectskool.png"
+  alt="ConnectSkool – Empowering Learning"
+  style={{ height: '160px', width: 'auto' }}
+  className="object-contain"
+  onError={(e) => {
+    e.currentTarget.style.display = 'none'
+    document.getElementById('cs-logo-fallback').style.display = 'flex'
+  }}
+/>
+          
           <div id="cs-logo-fallback" className="hidden items-center gap-3">
-            <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+            <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
                 <path d="M13 17l7-5 7 5v9a1 1 0 01-1 1H14a1 1 0 01-1-1v-9z" fill="#fff"/>
                 <rect x="17" y="21" width="6" height="6" rx="1" fill="#2563EB"/>
               </svg>
             </div>
             <div>
-              <p className="text-xl font-black text-slate-800 leading-tight">
+              <p className="text-2xl font-black text-slate-800 leading-tight">
                 Connect<span className="text-blue-600">Skool</span>
                 <span className="text-slate-400 font-medium">.com</span>
               </p>
-              <p className="text-xs text-slate-500 font-semibold">Empowering Learning</p>
+              <p className="text-sm text-slate-500 font-semibold">Empowering Learning</p>
             </div>
           </div>
         </div>
 
-        {/* Hero */}
-        <div className="relative z-10 flex-1 flex flex-col justify-center">
+        {/* ── Hero — fills remaining space ── */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center -mt-6">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.6 }}
           >
-            <span className="inline-block text-xs font-bold text-blue-600 tracking-widest uppercase mb-4 bg-blue-100 px-3 py-1.5 rounded-full">
+            <span className="inline-block text-xs font-bold text-blue-600 tracking-widest uppercase mb-3 bg-blue-100 px-3 py-1.5 rounded-full">
               Welcome to ConnectSkool
             </span>
-            <h1 className="text-5xl font-black text-slate-900 leading-tight mb-4">
+            <h1 className="text-5xl font-black text-slate-900 leading-tight mb-3">
               Smart School<br />
               <span className="text-blue-600">Management</span>{' '}
               <span className="text-emerald-500">System</span>
             </h1>
-            <p className="text-slate-500 text-base leading-relaxed max-w-md mb-7">
+            <p className="text-slate-500 text-base leading-relaxed max-w-md mb-5">
               Manage students, teachers, attendance, fees, and reports —{' '}
               <span className="font-bold text-slate-700">all in one powerful platform.</span>
             </p>
-
             <p className="text-xs text-slate-400 font-bold italic tracking-wide mb-2">
               ✦ One platform. Complete school control.
             </p>
@@ -158,10 +157,10 @@ function LoginPage() {
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.45, duration: 0.7 }}
-            className="relative flex justify-center items-center mt-4 mb-2"
-            style={{ minHeight: '260px' }}
+            className="relative flex justify-center items-center mt-2"
+            style={{ minHeight: '240px' }}
           >
-            {/* Glow behind image */}
+            {/* Glow */}
             <div
               className="absolute inset-0 rounded-3xl blur-3xl opacity-30 z-0"
               style={{ background: 'radial-gradient(ellipse at center, #818cf8 0%, #34d399 100%)' }}
@@ -174,72 +173,18 @@ function LoginPage() {
               className="w-full max-w-xs object-contain relative z-10 drop-shadow-xl"
             />
 
-            {/* ── Floating Labels ── */}
-
-            {/* Top-left */}
-            <FloatingLabel
-              icon={GraduationCap}
-              color="#2563eb"
-              delay={0.6}
-              style={{ top: '6%', left: '2%' }}
-            >
-              Student Management
-            </FloatingLabel>
-
-            {/* Top-right */}
-            <FloatingLabel
-              icon={Users}
-              color="#059669"
-              delay={0.75}
-              style={{ top: '8%', right: '0%' }}
-            >
-              Teacher Panel
-            </FloatingLabel>
-
-            {/* Middle-left */}
-            <FloatingLabel
-              icon={DollarSign}
-              color="#d97706"
-              delay={0.9}
-              style={{ top: '44%', left: '-4%' }}
-            >
-              Fee Management
-            </FloatingLabel>
-
-            {/* Middle-right */}
-            <FloatingLabel
-              icon={BarChart2}
-              color="#7c3aed"
-              delay={1.05}
-              style={{ top: '44%', right: '-2%' }}
-            >
-              Analytics
-            </FloatingLabel>
-
-            {/* Bottom-left */}
-            <FloatingLabel
-              icon={CalendarCheck}
-              color="#e11d48"
-              delay={1.2}
-              style={{ bottom: '6%', left: '2%' }}
-            >
-              Attendance
-            </FloatingLabel>
-
-            {/* Bottom-right */}
-            <FloatingLabel
-              icon={PieChart}
-              color="#0891b2"
-              delay={1.35}
-              style={{ bottom: '6%', right: '0%' }}
-            >
-              Reports
-            </FloatingLabel>
+            {/* Floating Labels */}
+            <FloatingLabel icon={GraduationCap} color="#2563eb" delay={0.60} style={{ top: '6%',  left: '2%'  }}>Student Management</FloatingLabel>
+            <FloatingLabel icon={Users}         color="#059669" delay={0.75} style={{ top: '8%',  right: '0%' }}>Teacher Panel</FloatingLabel>
+            <FloatingLabel icon={DollarSign}    color="#d97706" delay={0.90} style={{ top: '44%', left: '-4%' }}>Fee Management</FloatingLabel>
+            <FloatingLabel icon={BarChart2}     color="#7c3aed" delay={1.05} style={{ top: '44%', right: '-2%'}}>Analytics</FloatingLabel>
+            <FloatingLabel icon={CalendarCheck} color="#e11d48" delay={1.20} style={{ bottom: '6%', left: '2%'  }}>Attendance</FloatingLabel>
+            <FloatingLabel icon={PieChart}      color="#0891b2" delay={1.35} style={{ bottom: '6%', right: '0%' }}>Reports</FloatingLabel>
           </motion.div>
         </div>
 
         {/* Footer */}
-        <div className="relative z-10 flex items-center justify-between border-t border-blue-200/50 pt-4">
+        <div className="relative z-10 flex-shrink-0 flex items-center justify-between border-t border-blue-200/50 pt-4">
           <span className="text-xs text-slate-400">© 2026 ConnectSkool. All rights reserved.</span>
           <div className="flex gap-4">
             {['Privacy Policy', 'Terms & Conditions'].map((t) => (
@@ -263,9 +208,9 @@ function LoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <img
-              src="https://www.connectskool.com/assets/images/logo.png"
+              src="/logoconnectskool.png"
               alt="ConnectSkool"
-              className="h-12 object-contain"
+              className="h-14 object-contain"
               onError={e => { e.currentTarget.style.display = 'none' }}
             />
           </div>
