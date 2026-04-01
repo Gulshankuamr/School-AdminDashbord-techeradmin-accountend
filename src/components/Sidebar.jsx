@@ -253,10 +253,12 @@ const Sidebar = ({ isOpen, onClose, onToggleCollapse, isCollapsed }) => {
           </div>
 
           {!isCollapsed && (
-            <div className="flex-1 overflow-hidden">
-              <p className="font-semibold text-gray-800 text-sm leading-tight whitespace-nowrap">SchoolPro</p>
-              <p className="text-xs text-gray-400 whitespace-nowrap">Admin Panel</p>
-            </div>
+          <div className="flex-1 overflow-hidden">
+  <p className="font-extrabold text-gray-900 text-sm leading-tight whitespace-nowrap tracking-wide">
+    Connect<span className="text-violet-600">Skool</span>
+  </p>
+ 
+</div>
           )}
 
           <button

@@ -21,7 +21,8 @@ const AddStudent = () => {
     name: '', user_email: '', password: '', roll_no: '', gender: '',
     class_id: '',
     section_id: '',
-    academic_year: '', dob: '', mobile_number: '',
+    // academic_year: '',
+     dob: '', mobile_number: '',
     religion: '', blood_group: '', category: '', passed_out: '0', transfer: '0',
     father_name: '', father_mobile: '', father_occupation: '',
     mother_name: '', mother_mobile: '', mother_occupation: '',
@@ -148,7 +149,9 @@ const AddStudent = () => {
   const resetForm = () => {
     setFormData({
       name: '', user_email: '', password: '', roll_no: '', gender: '',
-      class_id: '', section_id: '', academic_year: '', dob: '', mobile_number: '',
+      class_id: '', section_id: '', 
+      // academic_year: '', 
+      dob: '', mobile_number: '',
       religion: '', blood_group: '', category: '', passed_out: '0', transfer: '0',
       father_name: '', father_mobile: '', father_occupation: '',
       mother_name: '', mother_mobile: '', mother_occupation: '',
@@ -427,11 +430,11 @@ const AddStudent = () => {
                   <input type="text" name="roll_no" value={formData.roll_no} onChange={handleChange} className={inp} placeholder="e.g., 01" /></div>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Academic Year <span className="text-red-400">*</span></label>
                 <div className="relative"><div className={ico}><GraduationCap className="h-4 w-4 text-gray-400" /></div>
                   <input type="text" name="academic_year" value={formData.academic_year} onChange={handleChange} className={inp} required placeholder="2025-26" /></div>
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Date of Birth <span className="text-red-400">*</span></label>

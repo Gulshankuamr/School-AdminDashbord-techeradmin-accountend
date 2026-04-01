@@ -27,7 +27,7 @@ function FloatingLabel({ children, icon: Icon, color, style, delay = 0 }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{
         opacity: { delay, duration: 0.4 },
-        scale:   { delay, duration: 0.4 },
+        scale: { delay, duration: 0.4 },
       }}
       className="absolute flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-white/60 z-20 select-none"
       style={style}
@@ -49,12 +49,12 @@ function LoginPage() {
   const location = useLocation()
   const { login } = useAuth()
 
-  const [email,        setEmail]        = useState('')
-  const [password,     setPassword]     = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [remember,     setRemember]     = useState(false)
-  const [error,        setError]        = useState('')
-  const [isLoading,    setIsLoading]    = useState(false)
+  const [remember, setRemember] = useState(false)
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const from = location.state?.from?.pathname || '/admin'
 
@@ -100,22 +100,22 @@ function LoginPage() {
 
         {/* ── Logo ── tight to top, no extra gap */}
         <div className="relative z-10 flex-shrink-0 -mt-8">
-<img
-  src="/logoconnectskool.png"
-  alt="ConnectSkool – Empowering Learning"
-  style={{ height: '160px', width: 'auto' }}
-  className="object-contain"
-  onError={(e) => {
-    e.currentTarget.style.display = 'none'
-    document.getElementById('cs-logo-fallback').style.display = 'flex'
-  }}
-/>
-          
+          <img
+            src="/logoconnectskool.png"
+            alt="ConnectSkool – Empowering Learning"
+            style={{ height: '160px', width: 'auto' }}
+            className="object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+              document.getElementById('cs-logo-fallback').style.display = 'flex'
+            }}
+          />
+
           <div id="cs-logo-fallback" className="hidden items-center gap-3">
             <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
               <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-                <path d="M13 17l7-5 7 5v9a1 1 0 01-1 1H14a1 1 0 01-1-1v-9z" fill="#fff"/>
-                <rect x="17" y="21" width="6" height="6" rx="1" fill="#2563EB"/>
+                <path d="M13 17l7-5 7 5v9a1 1 0 01-1 1H14a1 1 0 01-1-1v-9z" fill="#fff" />
+                <rect x="17" y="21" width="6" height="6" rx="1" fill="#2563EB" />
               </svg>
             </div>
             <div>
@@ -174,12 +174,12 @@ function LoginPage() {
             />
 
             {/* Floating Labels */}
-            <FloatingLabel icon={GraduationCap} color="#2563eb" delay={0.60} style={{ top: '6%',  left: '2%'  }}>Student Management</FloatingLabel>
-            <FloatingLabel icon={Users}         color="#059669" delay={0.75} style={{ top: '8%',  right: '0%' }}>Teacher Panel</FloatingLabel>
-            <FloatingLabel icon={DollarSign}    color="#d97706" delay={0.90} style={{ top: '44%', left: '-4%' }}>Fee Management</FloatingLabel>
-            <FloatingLabel icon={BarChart2}     color="#7c3aed" delay={1.05} style={{ top: '44%', right: '-2%'}}>Analytics</FloatingLabel>
-            <FloatingLabel icon={CalendarCheck} color="#e11d48" delay={1.20} style={{ bottom: '6%', left: '2%'  }}>Attendance</FloatingLabel>
-            <FloatingLabel icon={PieChart}      color="#0891b2" delay={1.35} style={{ bottom: '6%', right: '0%' }}>Reports</FloatingLabel>
+            <FloatingLabel icon={GraduationCap} color="#2563eb" delay={0.60} style={{ top: '6%', left: '2%' }}>Student Management</FloatingLabel>
+            <FloatingLabel icon={Users} color="#059669" delay={0.75} style={{ top: '8%', right: '0%' }}>Teacher Panel</FloatingLabel>
+            <FloatingLabel icon={DollarSign} color="#d97706" delay={0.90} style={{ top: '44%', left: '-4%' }}>Fee Management</FloatingLabel>
+            <FloatingLabel icon={BarChart2} color="#7c3aed" delay={1.05} style={{ top: '44%', right: '-2%' }}>Analytics</FloatingLabel>
+            <FloatingLabel icon={CalendarCheck} color="#e11d48" delay={1.20} style={{ bottom: '6%', left: '2%' }}>Attendance</FloatingLabel>
+            <FloatingLabel icon={PieChart} color="#0891b2" delay={1.35} style={{ bottom: '6%', right: '0%' }}>Reports</FloatingLabel>
           </motion.div>
         </div>
 
