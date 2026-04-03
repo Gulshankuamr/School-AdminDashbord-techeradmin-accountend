@@ -22,11 +22,7 @@ const GRADE_COLORS = {
   D:  'bg-rose-100 text-rose-800 border border-rose-200',
 }
 
-// 2026-27 → 2032-33
-const ACADEMIC_YEARS = Array.from({ length: 7 }, (_, i) => {
-  const s = 2026 + i
-  return `${s}-${String(s + 1).slice(2)}`
-})
+// ❌ REMOVED: const ACADEMIC_YEARS = Array.from(...)
 
 const PAGE_SIZE = 15
 
@@ -41,14 +37,8 @@ async function apiGet(path) {
   return json.data || []
 }
 
-// GET /schooladmin/getAllClasses → for class filter (to narrow student list)
 const fetchClasses  = () => apiGet('/schooladmin/getAllClasses')
-
-// GET /schooladmin/getAllSections?class_id=X
 const fetchSections = (cid) => apiGet(`/schooladmin/getAllSections?class_id=${cid}`)
-
-// GET /schooladmin/getTotalStudentsListBySchoolId?class_id=X&section_id=Y
-// Returns: [{ student_id, name, roll_no, admission_no, ... }]
 const fetchStudents = (cid, sid) =>
   apiGet(`/schooladmin/getTotalStudentsListBySchoolId?class_id=${cid}&section_id=${sid}`)
 
@@ -131,8 +121,12 @@ function Toast({ toasts }) {
 export default function CoScholasticGradesList() {
   const navigate = useNavigate()
 
+  // ✅ Academic Years from API
+  const [academicYears,      setAcademicYears]      = useState([])
+  const [yearsLoading,       setYearsLoading]       = useState(true)
+  const [academicYear,       setAcademicYear]       = useState('')
+
   // ── Step 1 filters: Class + Section to narrow student list ────────────────
-  const [academicYear,       setAcademicYear]       = useState(ACADEMIC_YEARS[0])
   const [classes,            setClasses]            = useState([])
   const [classesLoading,     setClassesLoading]     = useState(true)
   const [selectedClassId,    setSelectedClassId]    = useState('')
@@ -143,11 +137,9 @@ export default function CoScholasticGradesList() {
   // ── Step 2: Students from class+section ───────────────────────────────────
   const [students,        setStudents]        = useState([])
   const [studentsLoading, setStudentsLoading] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState(null)   // { student_id, name, roll_no }
+  const [selectedStudent, setSelectedStudent] = useState(null)
 
   // ── Step 3: Grades from API ───────────────────────────────────────────────
-  // grades rows: { co_scholastic_grades_id, student_id, subject_id, term, grade,
-  //               academic_year, subject_name, student_name, roll_no }
   const [grades,   setGrades]   = useState([])
   const [loading,  setLoading]  = useState(false)
   const [loaded,   setLoaded]   = useState(false)
@@ -171,6 +163,17 @@ export default function CoScholasticGradesList() {
     setToasts(p => [...p, { id, msg, type }])
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500)
   }
+
+  // ✅ Load Academic Years from API
+  useEffect(() => {
+    coScholasticGradeService.getAcademicYears()
+      .then(years => {
+        setAcademicYears(years)
+        if (years.length) setAcademicYear(years[0])
+      })
+      .catch(e => toast(e.message || 'Failed to load academic years', 'error'))
+      .finally(() => setYearsLoading(false))
+  }, [])
 
   // ── Load classes ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -200,14 +203,13 @@ export default function CoScholasticGradesList() {
     fetchStudents(selectedClassId, selectedSectionId)
       .then(d => {
         setStudents(d)
-        if (d.length) setSelectedStudent(d[0])   // auto-select first student
+        if (d.length) setSelectedStudent(d[0])
       })
       .catch(e => toast(e.message, 'error'))
       .finally(() => setStudentsLoading(false))
   }, [selectedClassId, selectedSectionId])
 
   // ── LOAD GRADES button ────────────────────────────────────────────────────
-  // API: GET /getCoScholasticGrades?student_id=264&academic_year=2026-27
   async function handleLoad() {
     if (!selectedStudent) { toast('Please select a student', 'error'); return }
     setLoading(true); setLoaded(false); setEditingId(null)
@@ -216,7 +218,6 @@ export default function CoScholasticGradesList() {
         student_id:    selectedStudent.student_id,
         academic_year: academicYear,
       })
-      // res.data = [{ co_scholastic_grades_id, student_name, subject_name, term, grade, academic_year, roll_no, ... }]
       setGrades(res.data || [])
       setLoaded(true); setPage(1); setSearch('')
     } catch (e) {
@@ -313,18 +314,24 @@ export default function CoScholasticGradesList() {
           {/* Row 1: Academic Year + Class + Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
 
-            {/* Academic Year */}
+            {/* ✅ Academic Year — Dynamic from API */}
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                 Academic Year
               </label>
-              <select
-                value={academicYear}
-                onChange={e => { setAcademicYear(e.target.value); setLoaded(false) }}
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
-              >
-                {ACADEMIC_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
+              {yearsLoading ? (
+                <div className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center px-3 gap-2 text-xs text-slate-400">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+                </div>
+              ) : (
+                <select
+                  value={academicYear}
+                  onChange={e => { setAcademicYear(e.target.value); setLoaded(false) }}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+                >
+                  {academicYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              )}
             </div>
 
             {/* Class */}
@@ -455,7 +462,6 @@ export default function CoScholasticGradesList() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                {/* Student pill */}
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full">
                   <User className="w-3 h-3 text-indigo-500" />
                   <span className="text-[12px] font-bold text-indigo-700">{selectedStudent?.name}</span>

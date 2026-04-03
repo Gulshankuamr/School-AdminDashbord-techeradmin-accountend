@@ -43,6 +43,7 @@ export const PERMISSIONS = {
   // 📝 EXAMS
   MANAGE_EXAM_MARKS:          'manage_exam_marks',
   GENERATE_MARKSHEET:         'generate_marksheet',
+  CREATE_EXAM: 'create_exam',
 
   // 💰 FEES & PAYMENTS
   VIEW_FEES:                  'view_fees',

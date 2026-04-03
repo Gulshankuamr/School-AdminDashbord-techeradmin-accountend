@@ -19,28 +19,57 @@ const ROLES = [
 ]
 
 // ── Section Meta — covers all keys returned by API (all lowercase) ──
+// const SECTION_META = {
+//   students:     { icon: Users,          color: 'blue'    },
+//   student:      { icon: Users,          color: 'blue'    },
+//   teachers:     { icon: BookOpen,       color: 'indigo'  },
+//   teacher:      { icon: BookOpen,       color: 'indigo'  },
+//   accountant:   { icon: Wallet,         color: 'violet'  },
+//   accountants:  { icon: Wallet,         color: 'violet'  },
+//   // admin:        { icon: UserCog,        color: 'rose'    },
+//   fees:         { icon: DollarSign,     color: 'emerald' },
+//   payments:     { icon: CreditCard,     color: 'emerald' },
+//   attendance:   { icon: ClipboardCheck, color: 'orange'  },
+//   exams:        { icon: FileText,       color: 'pink'    },
+//   reports:      { icon: BarChart3,      color: 'cyan'    },
+//   settings:     { icon: Settings,       color: 'gray'    },
+//   classes:      { icon: Calendar,       color: 'yellow'  },
+//   sections:     { icon: Layers,         color: 'teal'    },
+//   timetable:    { icon: Calendar,       color: 'teal'    },
+//   subjects:     { icon: BookOpen,       color: 'purple'  },
+//   homework:     { icon: FileText,       color: 'pink'    },
+//   notices:      { icon: BookOpen,       color: 'blue'    },
+//   notification: { icon: Bell,           color: 'orange'  },
+//   school:       { icon: School,         color: 'indigo'  },
+// }
+
+
+// src/pages/admin/RolePermissions.jsx
+// SECTION_META mein SIRF yeh line add karo (line ~42 ke paas):
+
 const SECTION_META = {
-  students:     { icon: Users,          color: 'blue'    },
-  student:      { icon: Users,          color: 'blue'    },
-  teachers:     { icon: BookOpen,       color: 'indigo'  },
-  teacher:      { icon: BookOpen,       color: 'indigo'  },
-  accountant:   { icon: Wallet,         color: 'violet'  },
-  accountants:  { icon: Wallet,         color: 'violet'  },
-  // admin:        { icon: UserCog,        color: 'rose'    },
-  fees:         { icon: DollarSign,     color: 'emerald' },
-  payments:     { icon: CreditCard,     color: 'emerald' },
-  attendance:   { icon: ClipboardCheck, color: 'orange'  },
-  exams:        { icon: FileText,       color: 'pink'    },
-  reports:      { icon: BarChart3,      color: 'cyan'    },
-  settings:     { icon: Settings,       color: 'gray'    },
-  classes:      { icon: Calendar,       color: 'yellow'  },
-  sections:     { icon: Layers,         color: 'teal'    },
-  timetable:    { icon: Calendar,       color: 'teal'    },
-  subjects:     { icon: BookOpen,       color: 'purple'  },
-  homework:     { icon: FileText,       color: 'pink'    },
-  notices:      { icon: BookOpen,       color: 'blue'    },
-  notification: { icon: Bell,           color: 'orange'  },
-  school:       { icon: School,         color: 'indigo'  },
+  students:      { icon: Users,          color: 'blue'    },
+  student:       { icon: Users,          color: 'blue'    },
+  teachers:      { icon: BookOpen,       color: 'indigo'  },
+  teacher:       { icon: BookOpen,       color: 'indigo'  },
+  accountant:    { icon: Wallet,         color: 'violet'  },
+  accountants:   { icon: Wallet,         color: 'violet'  },
+  fees:          { icon: DollarSign,     color: 'emerald' },
+  payments:      { icon: CreditCard,     color: 'emerald' },
+  attendance:    { icon: ClipboardCheck, color: 'orange'  },
+  exams:         { icon: FileText,       color: 'pink'    },
+  reports:       { icon: BarChart3,      color: 'cyan'    },
+  settings:      { icon: Settings,       color: 'gray'    },
+  classes:       { icon: Calendar,       color: 'yellow'  },
+  sections:      { icon: Layers,         color: 'teal'    },
+  timetable:     { icon: Calendar,       color: 'teal'    },
+  subjects:      { icon: BookOpen,       color: 'purple'  },
+  homework:      { icon: FileText,       color: 'pink'    },
+  notices:       { icon: BookOpen,       color: 'blue'    },
+  notification:  { icon: Bell,           color: 'orange'  },
+  notifications: { icon: Bell,           color: 'orange'  }, 
+  school:        { icon: School,         color: 'indigo'  },
+  transport:     { icon: Settings,       color: 'gray'    }, 
 }
 
 const COLORS = {

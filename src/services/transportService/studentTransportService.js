@@ -71,8 +71,6 @@ const assignTransport = async (payload) => {
       student_id:              payload.student_id,
       transport_route_id:      payload.transport_route_id,
       transport_route_stop_id: payload.transport_route_stop_id,
-      academic_year:           payload.academic_year,
-      academic_year_end:       payload.academic_year_end,
       assigned_on:             payload.assigned_on,
     }),
   })
@@ -133,8 +131,6 @@ const removeAssignment = async (assignmentId) => {
 }
 
 // ── DISCONTINUE STUDENT TRANSPORT ─────────────────────────────────────────────
-// PUT /api/schooladmin/discontinueStudentTransport
-// Payload: { student_id, academic_year, discontinued_on, discontinue_reason }
 const discontinueStudentTransport = async (payload) => {
   const token = getAuthToken()
   const res = await fetch(`${API_BASE_URL}/schooladmin/discontinueStudentTransport`, {
@@ -144,10 +140,10 @@ const discontinueStudentTransport = async (payload) => {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      student_id:          payload.student_id,
-      academic_year:       payload.academic_year,
-      discontinued_on:     payload.discontinued_on,
-      discontinue_reason:  payload.discontinue_reason,
+      student_id:         payload.student_id,
+      academic_year:      payload.academic_year,
+      discontinued_on:    payload.discontinued_on,
+      discontinue_reason: payload.discontinue_reason,
     }),
   })
   const data = await res.json()
@@ -156,7 +152,6 @@ const discontinueStudentTransport = async (payload) => {
 }
 
 // ── GET ALL TRANSPORT STUDENTS BY ACADEMIC YEAR ───────────────────────────────
-// GET /api/schooladmin/getAllTransportStudents?academic_year=2026-27
 const getTransportStudentsByYear = async (academicYear) => {
   const token = getAuthToken()
   const res = await fetch(
@@ -166,6 +161,20 @@ const getTransportStudentsByYear = async (academicYear) => {
   const data = await res.json()
   if (!res.ok || !data.success) throw new Error(data.message || 'Failed to fetch transport students')
   return data.data || []
+}
+
+// ── GET ACADEMIC YEARS ✅ NEW ─────────────────────────────────────────────────
+// GET /schoolAdmin/getAcademicYears
+// Response: { success, data: [{ academic_year_id, year_name, ... }] }
+const getAcademicYears = async () => {
+  const token = getAuthToken()
+  const res = await fetch(`${API_BASE_URL}/schoolAdmin/getAcademicYears`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const data = await res.json()
+  if (!res.ok || !data.success) throw new Error(data.message || 'Failed to fetch academic years')
+  // Return only year_name strings: ["2026-27", ...]
+  return (data.data || []).map(item => item.year_name)
 }
 
 // ── NAMED EXPORT ──────────────────────────────────────────────────────────────
@@ -182,4 +191,5 @@ export const studentTransportService = {
   removeAssignment,
   discontinueStudentTransport,
   getTransportStudentsByYear,
+  getAcademicYears,              
 }

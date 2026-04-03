@@ -4,11 +4,6 @@ export const coScholasticGradeService = {
 
   // ════════════════════════════════════════════════════════════════════
   // 1️⃣  GET CO-SCHOLASTIC GRADES
-  //  GET /schooladmin/getCoScholasticGrades?student_id=264&academic_year=2026-27
-  //  Response: { success, data: [{
-  //    co_scholastic_grades_id, school_id, student_id, subject_id,
-  //    term, grade, academic_year, subject_name, student_name, roll_no
-  //  }] }
   // ════════════════════════════════════════════════════════════════════
   getCoScholasticGrades: async ({ student_id, class_id, section_id, academic_year, term } = {}) => {
     const token = getAuthToken()
@@ -24,13 +19,11 @@ export const coScholasticGradeService = {
     })
     const data = await res.json()
     if (!res.ok || data.success !== true) throw new Error(data?.message || 'Failed to fetch grades')
-    return data   // data.data[] is the array
+    return data
   },
 
   // ════════════════════════════════════════════════════════════════════
   // 2️⃣  CREATE
-  //  POST /schooladmin/createCoScholasticGrade
-  //  Body: { student_id, subject_id, term, grade, academic_year }
   // ════════════════════════════════════════════════════════════════════
   createCoScholasticGrade: async (payload) => {
     const token = getAuthToken()
@@ -47,8 +40,6 @@ export const coScholasticGradeService = {
 
   // ════════════════════════════════════════════════════════════════════
   // 3️⃣  UPDATE
-  //  PUT /schooladmin/updateCoScholasticGrade
-  //  Body: { grade_id: <co_scholastic_grades_id>, grade: "A1" }
   // ════════════════════════════════════════════════════════════════════
   updateCoScholasticGrade: async (co_scholastic_grades_id, newGrade) => {
     const token = getAuthToken()
@@ -65,8 +56,6 @@ export const coScholasticGradeService = {
 
   // ════════════════════════════════════════════════════════════════════
   // 4️⃣  DELETE
-  //  DELETE /schooladmin/deleteCoScholasticGrade
-  //  Body: { grade_id: <co_scholastic_grades_id> }
   // ════════════════════════════════════════════════════════════════════
   deleteCoScholasticGrade: async (co_scholastic_grades_id) => {
     const token = getAuthToken()
@@ -79,5 +68,22 @@ export const coScholasticGradeService = {
     const data = await res.json()
     if (!res.ok || data.success !== true) throw new Error(data?.message || 'Failed to delete grade')
     return data
+  },
+
+  // ════════════════════════════════════════════════════════════════════
+  // 5️⃣  GET ACADEMIC YEARS  ✅ NEW
+  //  GET /schoolAdmin/getAcademicYears
+  //  Response: { success, data: [{ academic_year_id, year_name, ... }] }
+  // ════════════════════════════════════════════════════════════════════
+  getAcademicYears: async () => {
+    const token = getAuthToken()
+    if (!token) throw new Error('Token missing')
+    const res  = await fetch(`${API_BASE_URL}/schoolAdmin/getAcademicYears`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const data = await res.json()
+    if (!res.ok || data.success !== true) throw new Error(data?.message || 'Failed to fetch academic years')
+    // Return only year_name strings: ["2026-27", ...]
+    return (data.data || []).map(item => item.year_name)
   },
 }

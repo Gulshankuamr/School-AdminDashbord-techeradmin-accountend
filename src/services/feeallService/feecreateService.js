@@ -36,7 +36,6 @@ export const feecreateService = {
       const data = await response.json()
       console.log('📊 Fee Heads API Response:', data)
 
-      // Better response structure handling
       if (data?.success === true) {
         return data
       } else {
@@ -92,7 +91,53 @@ export const feecreateService = {
   },
 
   // ===============================
-  // 3️⃣ CREATE FEE
+  // 3️⃣ GET ACADEMIC YEARS ✅ NEW
+  //  GET /schoolAdmin/getAcademicYears
+  //  Response: { success, data: [{ academic_year_id, year_name, ... }] }
+  // ===============================
+  getAcademicYears: async () => {
+    try {
+      const token = getAuthToken()
+      if (!token) {
+        throw new Error('Authentication required')
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/schoolAdmin/getAcademicYears`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (response.status === 401) {
+        throw new Error('Session expired. Please login again.')
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('📊 Academic Years API Response:', data)
+
+      if (data?.success === true) {
+        // Return only year_name strings: ["2026-27", ...]
+        return (data.data || []).map(item => item.year_name)
+      } else {
+        throw new Error(data?.message || 'Failed to fetch academic years')
+      }
+    } catch (error) {
+      console.error('Get academic years error:', error)
+      throw error
+    }
+  },
+
+  // ===============================
+  // 4️⃣ CREATE FEE
   // ===============================
   createFee: async (payload) => {
     try {
@@ -101,7 +146,6 @@ export const feecreateService = {
         throw new Error('Authentication required')
       }
 
-      // Validate required fields
       if (!payload.class_id || !payload.fee_head_id || !payload.base_amount || !payload.fee_frequency || !payload.academic_year) {
         throw new Error('Missing required fields: class_id, fee_head_id, base_amount, fee_frequency, academic_year are required')
       }
@@ -152,7 +196,7 @@ export const feecreateService = {
   },
 
   // ===============================
-  // 4️⃣ GET ALL FEES
+  // 5️⃣ GET ALL FEES
   // ===============================
   getAllFees: async () => {
     try {
@@ -201,7 +245,7 @@ export const feecreateService = {
   },
 
   // ===============================
-  // 5️⃣ DELETE FEE (FIXED)
+  // 6️⃣ DELETE FEE
   // ===============================
   deleteFee: async (feeId) => {
     try {
@@ -214,23 +258,8 @@ export const feecreateService = {
         throw new Error('Fee ID is required')
       }
 
-      // Fix: Proper DELETE request without body or with correct payload
-      // Option 1: If API expects fee_id in URL
-      // const response = await fetch(
-      //   `${API_BASE_URL}/schooladmin/deleteFee/${feeId}`,
-      //   {
-      //     method: 'DELETE',
-      //     headers: {
-      //       'Authorization': `Bearer ${token}`,
-      //       'Content-Type': 'application/json',
-      //     },
-      //   }
-      // )
-
-      // Option 2: If API expects fee_id in body (current implementation)
       const payload = {
         fee_id: feeId
-        // Remove status: 0 if not needed
       }
 
       console.log('🗑️ Delete Fee Payload:', payload)
@@ -259,7 +288,6 @@ export const feecreateService = {
       try {
         data = await response.json()
       } catch (parseError) {
-        // If response is empty or not JSON, check status
         if (response.ok) {
           return { success: true, message: 'Fee deleted successfully' }
         }
@@ -268,14 +296,12 @@ export const feecreateService = {
 
       console.log('🗑️ Delete Fee Response:', data)
 
-      // Check for success in response
       if (response.ok && data?.success === true) {
         return data
       } else {
         const errorMessage = data?.message || data?.error || 'Failed to delete fee'
-        
-        // Handle specific error messages
-        if (errorMessage.toLowerCase().includes('assigned to students') || 
+
+        if (errorMessage.toLowerCase().includes('assigned to students') ||
             errorMessage.toLowerCase().includes('student assigned')) {
           throw new Error('Cannot delete fee as it is already assigned to students. Please deactivate it instead.')
         }
@@ -285,7 +311,7 @@ export const feecreateService = {
         if (errorMessage.toLowerCase().includes('already deleted')) {
           throw new Error('Fee structure is already deleted')
         }
-        
+
         throw new Error(errorMessage)
       }
     } catch (error) {
@@ -295,7 +321,7 @@ export const feecreateService = {
   },
 
   // ===============================
-  // 6️⃣ DEACTIVATE FEE (Alternative to delete)
+  // 7️⃣ DEACTIVATE FEE (Alternative to delete)
   // ===============================
   deactivateFee: async (feeId) => {
     try {
@@ -310,15 +336,15 @@ export const feecreateService = {
 
       const payload = {
         fee_id: feeId,
-        status: 0  // 0 for inactive
+        status: 0
       }
 
       console.log('🔄 Deactivate Fee Payload:', payload)
 
       const response = await fetch(
-        `${API_BASE_URL}/schooladmin/updateFeeStatus`, // You might need to adjust this endpoint
+        `${API_BASE_URL}/schooladmin/updateFeeStatus`,
         {
-          method: 'PUT', // or POST depending on API
+          method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

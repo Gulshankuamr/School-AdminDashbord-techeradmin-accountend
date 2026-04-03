@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   BookOpen, Save, RotateCcw, Search, List,
   ChevronLeft, ChevronRight, CheckCircle2, AlertCircle,
-  Loader2, GraduationCap, Sparkles,
+  Loader2, GraduationCap,
 } from 'lucide-react'
 import { coScholasticGradeService } from '../../services/examService/coScholasticGradeService'
 import { API_BASE_URL, getAuthToken } from '../../services/api'
@@ -22,10 +22,7 @@ const GRADE_COLORS = {
   D:  { sel: 'bg-rose-100 text-rose-800 border-rose-300',         badge: 'bg-rose-100 text-rose-800' },
 }
 
-const ACADEMIC_YEARS = Array.from({ length: 7 }, (_, i) => {
-  const s = 2026 + i
-  return `${s}-${String(s + 1).slice(2)}`
-})
+// ❌ REMOVED: const ACADEMIC_YEARS = Array.from(...)
 
 const TERMS = [
   { value: 'term1', label: 'Term 1' },
@@ -47,17 +44,11 @@ async function apiGet(path) {
   return json.data || []
 }
 
-// GET /schooladmin/getAllClasses
-const fetchClasses = () => apiGet('/schooladmin/getAllClasses')
-
-// GET /schooladmin/getAllSections?class_id=X
+const fetchClasses  = () => apiGet('/schooladmin/getAllClasses')
 const fetchSections = (cid) => apiGet(`/schooladmin/getAllSections?class_id=${cid}`)
-
-// GET /schooladmin/getTotalStudentsListBySchoolId?class_id=X&section_id=Y
 const fetchStudents = (cid, sid) =>
   apiGet(`/schooladmin/getTotalStudentsListBySchoolId?class_id=${cid}&section_id=${sid}`)
 
-// GET /schooladmin/getAllSubjects → filter assessment_model === 'co_scholastic'
 async function fetchCoSubjects() {
   const all = await apiGet('/schooladmin/getAllSubjects')
   return all.filter(s => s.assessment_model === 'co_scholastic')
@@ -114,8 +105,11 @@ function Toast({ toasts }) {
 export default function CreateCoScholasticGrades() {
   const navigate = useNavigate()
 
-  // filters
-  const [academicYear,      setAcademicYear]      = useState(ACADEMIC_YEARS[0])
+  // ✅ Academic Years from API
+  const [academicYears,     setAcademicYears]     = useState([])
+  const [yearsLoading,      setYearsLoading]      = useState(true)
+  const [academicYear,      setAcademicYear]      = useState('')
+
   const [term,              setTerm]              = useState('term1')
   const [classes,           setClasses]           = useState([])
   const [classesLoading,    setClassesLoading]    = useState(true)
@@ -124,16 +118,12 @@ export default function CreateCoScholasticGrades() {
   const [sectionsLoading,   setSectionsLoading]   = useState(false)
   const [selectedSectionId, setSelectedSectionId] = useState('')
 
-  // data
   const [students,    setStudents]    = useState([])
   const [coSubjects,  setCoSubjects]  = useState([])
-  // localGrades[`${student_id}_${subject_id}`] = grade string
   const [localGrades, setLocalGrades] = useState({})
-  // origGrades[`${student_id}_${subject_id}`] = { co_scholastic_grades_id, grade }
   const [origGrades,  setOrigGrades]  = useState({})
   const [dirty,       setDirty]       = useState(false)
 
-  // ui
   const [loading,  setLoading]  = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [loaded,   setLoaded]   = useState(false)
@@ -148,7 +138,18 @@ export default function CreateCoScholasticGrades() {
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500)
   }
 
-  // load classes
+  // ✅ Load Academic Years from API
+  useEffect(() => {
+    coScholasticGradeService.getAcademicYears()
+      .then(years => {
+        setAcademicYears(years)
+        if (years.length) setAcademicYear(years[0])
+      })
+      .catch(e => toast(e.message || 'Failed to load academic years', 'error'))
+      .finally(() => setYearsLoading(false))
+  }, [])
+
+  // Load classes
   useEffect(() => {
     fetchClasses()
       .then(d => { setClasses(d); if (d.length) setSelectedClassId(String(d[0].class_id)) })
@@ -156,7 +157,7 @@ export default function CreateCoScholasticGrades() {
       .finally(() => setClassesLoading(false))
   }, [])
 
-  // load sections on class change
+  // Load sections on class change
   useEffect(() => {
     if (!selectedClassId) { setSections([]); setSelectedSectionId(''); return }
     setSectionsLoading(true); setSections([]); setSelectedSectionId(''); setLoaded(false)
@@ -166,12 +167,10 @@ export default function CreateCoScholasticGrades() {
       .finally(() => setSectionsLoading(false))
   }, [selectedClassId])
 
-  // LOAD button
   async function handleLoad() {
     if (!selectedClassId || !selectedSectionId) { toast('Select class and section', 'error'); return }
     setLoading(true); setLoaded(false)
     try {
-      // parallel: students + all co-scholastic subjects
       const [studs, subs] = await Promise.all([
         fetchStudents(selectedClassId, selectedSectionId),
         fetchCoSubjects(),
@@ -179,7 +178,6 @@ export default function CreateCoScholasticGrades() {
       setStudents(studs)
       setCoSubjects(subs)
 
-      // fetch existing grades per student (parallel)
       const gradeMap = {}
       const origMap  = {}
 
@@ -194,7 +192,7 @@ export default function CreateCoScholasticGrades() {
 
       results.forEach(({ sid, rows }) => {
         rows.forEach(row => {
-          if (row.term !== term) return   // only current term
+          if (row.term !== term) return
           const key     = `${sid}_${row.subject_id}`
           gradeMap[key] = row.grade
           origMap[key]  = { co_scholastic_grades_id: row.co_scholastic_grades_id, grade: row.grade }
@@ -246,7 +244,6 @@ export default function CreateCoScholasticGrades() {
       })
       if (!ops.length) { toast('No changes to save', 'error'); setSaving(false); return }
       await Promise.all(ops)
-      // sync originals
       const newOrig = { ...origGrades }
       Object.entries(localGrades).forEach(([k, g]) => {
         if (g) newOrig[k] = { ...(newOrig[k] || {}), grade: g }
@@ -275,7 +272,7 @@ export default function CreateCoScholasticGrades() {
         @keyframes fadeUp   { from{opacity:0;transform:translateY(8px)}  to{opacity:1;transform:none} }
       `}</style>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="bg-white border-b border-slate-200 px-6 py-5">
         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-1.5 font-semibold uppercase tracking-wider">
           <GraduationCap className="w-3.5 h-3.5" />
@@ -287,7 +284,6 @@ export default function CreateCoScholasticGrades() {
           <div>
             <h1 className="text-[22px] font-extrabold text-slate-900 flex items-center gap-2 tracking-tight">
               Co-Scholastic Grades
-              {/* <Sparkles className="w-5 h-5 text-indigo-400" /> */}
             </h1>
             <p className="text-[13px] text-slate-500 mt-0.5">
               Assign grades for extracurricular & personal development subjects.
@@ -313,18 +309,29 @@ export default function CreateCoScholasticGrades() {
 
       <div className="p-6 space-y-5">
 
-        {/* ── Filters ── */}
+        {/* Filters */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
 
+            {/* ✅ Academic Year — Dynamic from API */}
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Academic Year</label>
-              <select value={academicYear} onChange={e => { setAcademicYear(e.target.value); setLoaded(false) }}
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 transition">
-                {ACADEMIC_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
+              {yearsLoading ? (
+                <div className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center px-3 gap-2 text-xs text-slate-400">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+                </div>
+              ) : (
+                <select
+                  value={academicYear}
+                  onChange={e => { setAcademicYear(e.target.value); setLoaded(false) }}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+                >
+                  {academicYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              )}
             </div>
 
+            {/* Class */}
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Class</label>
               {classesLoading
@@ -337,6 +344,7 @@ export default function CreateCoScholasticGrades() {
               }
             </div>
 
+            {/* Section */}
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Section</label>
               {sectionsLoading
@@ -350,6 +358,7 @@ export default function CreateCoScholasticGrades() {
               }
             </div>
 
+            {/* Term */}
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Term</label>
               <select value={term} onChange={e => { setTerm(e.target.value); setLoaded(false) }}
@@ -358,18 +367,17 @@ export default function CreateCoScholasticGrades() {
               </select>
             </div>
 
-            <button onClick={handleLoad} disabled={loading || !selectedClassId || !selectedSectionId}
+            {/* Load button */}
+            <button onClick={handleLoad} disabled={loading || !selectedClassId || !selectedSectionId || yearsLoading}
               className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-sm font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm shadow-indigo-200 disabled:cursor-not-allowed">
               {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Loading…</> : <><BookOpen className="w-4 h-4" />Load</>}
             </button>
           </div>
         </div>
 
-        {/* ── Grade Table ── */}
+        {/* Grade Table */}
         {loaded && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-[fadeUp_0.35s_ease]">
-
-            {/* Toolbar */}
             <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap bg-white">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -383,23 +391,15 @@ export default function CreateCoScholasticGrades() {
               </span>
             </div>
 
-            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-900 text-white">
-                    <th className="text-left px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap w-[88px]">
-                      Roll No
-                    </th>
-                    <th className="text-left px-4 py-3.5 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap min-w-[180px]">
-                      Student Name
-                    </th>
+                    <th className="text-left px-5 py-3.5 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap w-[88px]">Roll No</th>
+                    <th className="text-left px-4 py-3.5 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap min-w-[180px]">Student Name</th>
                     {coSubjects.map((sub, i) => (
                       <th key={sub.subject_id}
-                        className={[
-                          'text-center px-4 py-3.5 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap min-w-[100px]',
-                          i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-900',
-                        ].join(' ')}>
+                        className={['text-center px-4 py-3.5 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap min-w-[100px]', i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-900'].join(' ')}>
                         {sub.subject_name}
                       </th>
                     ))}
@@ -408,22 +408,15 @@ export default function CreateCoScholasticGrades() {
                 <tbody>
                   {coSubjects.length === 0 ? (
                     <tr><td colSpan={2} className="px-5 py-14 text-center text-slate-400 text-sm">
-                      No co-scholastic subjects found. Add subjects with <strong>assessment_model = co_scholastic</strong>.
+                      No co-scholastic subjects found.
                     </td></tr>
                   ) : paginated.length === 0 ? (
-                    <tr><td colSpan={2 + coSubjects.length} className="px-5 py-14 text-center text-slate-400 text-sm">
-                      No students found.
-                    </td></tr>
+                    <tr><td colSpan={2 + coSubjects.length} className="px-5 py-14 text-center text-slate-400 text-sm">No students found.</td></tr>
                   ) : paginated.map((student, idx) => (
                     <tr key={student.student_id}
-                      className={[
-                        'border-b border-slate-100 hover:bg-indigo-50/40 transition-colors',
-                        idx % 2 !== 0 ? 'bg-slate-50/60' : 'bg-white',
-                      ].join(' ')}>
+                      className={['border-b border-slate-100 hover:bg-indigo-50/40 transition-colors', idx % 2 !== 0 ? 'bg-slate-50/60' : 'bg-white'].join(' ')}>
                       <td className="px-5 py-3.5">
-                        <span className="font-mono text-[12px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                          {student.roll_no ?? '—'}
-                        </span>
+                        <span className="font-mono text-[12px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{student.roll_no ?? '—'}</span>
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2.5">
@@ -437,10 +430,7 @@ export default function CreateCoScholasticGrades() {
                         const key = `${student.student_id}_${sub.subject_id}`
                         return (
                           <td key={sub.subject_id} className="px-4 py-3.5 text-center">
-                            <GradeSelect
-                              value={localGrades[key]}
-                              onChange={g => handleGradeChange(student.student_id, sub.subject_id, g)}
-                            />
+                            <GradeSelect value={localGrades[key]} onChange={g => handleGradeChange(student.student_id, sub.subject_id, g)} />
                           </td>
                         )
                       })}
@@ -450,7 +440,6 @@ export default function CreateCoScholasticGrades() {
               </table>
             </div>
 
-            {/* Pagination */}
             <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-3 bg-white">
               <span className="text-[12px] text-slate-400">
                 Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
@@ -470,7 +459,6 @@ export default function CreateCoScholasticGrades() {
           </div>
         )}
 
-        {/* ── Empty state ── */}
         {!loaded && !loading && (
           <div className="bg-white rounded-2xl border border-dashed border-slate-200 py-20 flex flex-col items-center gap-3">
             <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center">
@@ -479,13 +467,10 @@ export default function CreateCoScholasticGrades() {
             <p className="text-sm text-slate-400 font-medium">Select filters and click <strong className="text-slate-600">Load</strong> to view grades</p>
           </div>
         )}
-
       </div>
 
-      {/* ── Bottom bar ── */}
       {loaded && (
-        <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-slate-200 px-6 py-3.5 z-40
-          flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.07)] transition-[left] duration-300">
+        <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-slate-200 px-6 py-3.5 z-40 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.07)] transition-[left] duration-300">
           <div className="flex items-center gap-2 text-[12px] font-bold text-emerald-600">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             AUTO-SAVING ENABLED

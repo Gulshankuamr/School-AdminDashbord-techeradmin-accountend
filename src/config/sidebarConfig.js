@@ -45,8 +45,8 @@ export const sidebarMenuItems = [
         hasDropdown: true,
         permission:  P.VIEW_ALL_STUDENT,
         subItems: [
-          { id: 'student-list', label: 'All Students', path: '/admin/students',     permission: P.VIEW_ALL_STUDENT },
           { id: 'add-student',  label: 'Add Student',  path: '/admin/students/add', permission: P.ADD_STUDENT      },
+          { id: 'student-list', label: 'All Students', path: '/admin/students',     permission: P.VIEW_ALL_STUDENT },       
         ],
       },
 
@@ -66,8 +66,8 @@ export const sidebarMenuItems = [
         hasDropdown: true,
         permission:  P.VIEW_SUBJECTS,
         subItems: [
-          { id: 'subject-list', label: 'All Subjects', path: '/admin/subject',      permission: P.VIEW_SUBJECTS },
-          { id: 'add-subject',  label: 'Add Subject',  path: '/admin/subject/add',  permission: P.ADD_SUBJECT   },
+          // { id: 'subject-list', label: 'Add & view ', path: '/admin/subject',      permission: P.VIEW_SUBJECTS },
+          { id: 'add-subject',  label: 'Add & view  Subject',  path: '/admin/subject/add',  permission: P.ADD_SUBJECT   },
         ],
       },
 
@@ -114,9 +114,9 @@ export const sidebarMenuItems = [
         label:       'Exams',
         icon:        FileText,
         hasDropdown: true,
-        permission:  [P.MANAGE_EXAM_MARKS, P.GENERATE_MARKSHEET],
+        permission:  [P.MANAGE_EXAM_MARKS, P.GENERATE_MARKSHEET , P.CREATE_EXAM,],
         subItems: [
-          { id: 'create-exam',           label: 'Create Exam',          path: '/admin/exams/add',                 permission: P.MANAGE_EXAM_MARKS  },
+          { id: 'create-exam',           label: 'Create Exam',          path: '/admin/exams/add',                permission: P.CREATE_EXAM, },
           { id: 'exam-timetable-create', label: 'Exam Timetable',       path: '/admin/exams/timetable/create',    permission: P.MANAGE_EXAM_MARKS  },
           { id: 'assign-marks',          label: 'Create Marks',         path: '/admin/exams/assign-marks',        permission: P.MANAGE_EXAM_MARKS  },
           { id: 'marks-list',            label: 'Marks List',           path: '/admin/exams/marks-list',          permission: P.MANAGE_EXAM_MARKS  },

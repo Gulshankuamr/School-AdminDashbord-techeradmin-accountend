@@ -1,12 +1,12 @@
 // src/pages/FeeList.jsx
 import React, { useState, useEffect } from 'react';
-import { Trash2, Filter, Plus, Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { Trash2, Filter, Plus, Search, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { feecreateService } from '../../services/feeallService/feecreateService';
 
 const FeeList = () => {
   const navigate = useNavigate();
-  
+
   const [fees, setFees] = useState([]);
   const [filteredFees, setFilteredFees] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -17,38 +17,41 @@ const FeeList = () => {
   const [deleteSuccess, setDeleteSuccess] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Filters - Status removed from UI as per requirement
+  // ✅ Academic Years from API
+  const [academicYears, setAcademicYears] = useState([]);
+  const [yearsLoading,  setYearsLoading]  = useState(true);
+
+  // Filters
   const [filters, setFilters] = useState({
     academicYear: '',
-    classId: '',
-    feeHeadId: '',
-    search: ''
+    classId:      '',
+    feeHeadId:    '',
+    search:       ''
   });
 
   // Summary data
   const [summary, setSummary] = useState({
-    totalStructures: 0,
-    activeFees: 0,
-    estimatedRevenue: 0
+    totalStructures:   0,
+    activeFees:        0,
+    estimatedRevenue:  0
   });
 
   // Modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [feeToDelete, setFeeToDelete] = useState(null);
+  const [feeToDelete,     setFeeToDelete]     = useState(null);
 
-  // ✅ Static academic years from 2026-27 to 2032-33
-  const academicYears = Array.from({ length: 7 }, (_, i) => {
-    const startYear = 2026 + i;
-    const endYear = (startYear + 1).toString().slice(-2);
-    return `${startYear}-${endYear}`;
-  });
+  // ✅ Load Academic Years from API on mount
+  useEffect(() => {
+    feecreateService.getAcademicYears()
+      .then(years => setAcademicYears(years))
+      .catch(e => console.warn('Failed to load academic years:', e.message))
+      .finally(() => setYearsLoading(false));
+  }, []);
 
-  // Fetch data on component mount
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Apply filters when filters change
   useEffect(() => {
     applyFilters();
   }, [fees, filters]);
@@ -58,7 +61,6 @@ const FeeList = () => {
       setLoading(true);
       setAuthError('');
 
-      // Fetch fees
       const feeResponse = await feecreateService.getAllFees();
       console.log('📊 Fee API Response:', feeResponse);
 
@@ -73,7 +75,6 @@ const FeeList = () => {
 
       setFees(feesData);
 
-      // Fetch classes for filter
       try {
         const classResponse = await feecreateService.getAllClasses();
         setClasses(classResponse.data || []);
@@ -81,7 +82,6 @@ const FeeList = () => {
         console.warn('Could not fetch classes:', classError);
       }
 
-      // Fetch fee heads for filter
       try {
         const feeHeadResponse = await feecreateService.getAllFeeHeads();
         if (feeHeadResponse.data?.fee_heads) {
@@ -95,18 +95,13 @@ const FeeList = () => {
         console.warn('Could not fetch fee heads:', feeHeadError);
       }
 
-      // Calculate summary - All fees are considered active (status hidden from UI)
-      const totalStructures = feesData.length;
-      const activeFees = feesData.length;
-      const estimatedRevenue = feesData.reduce((sum, fee) => {
+      const totalStructures   = feesData.length;
+      const activeFees        = feesData.length;
+      const estimatedRevenue  = feesData.reduce((sum, fee) => {
         return sum + parseFloat(fee.total_amount || fee.base_amount || 0);
       }, 0);
 
-      setSummary({
-        totalStructures,
-        activeFees,
-        estimatedRevenue
-      });
+      setSummary({ totalStructures, activeFees, estimatedRevenue });
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -121,28 +116,21 @@ const FeeList = () => {
   const applyFilters = () => {
     let filtered = [...fees];
 
-    // Apply academic year filter
     if (filters.academicYear) {
       filtered = filtered.filter(fee => fee.academic_year === filters.academicYear);
     }
-
-    // Apply class filter
     if (filters.classId) {
       filtered = filtered.filter(fee => fee.class_id === parseInt(filters.classId));
     }
-
-    // Apply fee head filter
     if (filters.feeHeadId) {
       filtered = filtered.filter(fee => fee.fee_head_id === parseInt(filters.feeHeadId));
     }
-
-    // Apply search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(fee =>
-        (fee.class_name?.toLowerCase() || '').includes(searchLower) ||
-        (fee.fee_head_name?.toLowerCase() || '').includes(searchLower) ||
-        (fee.fee_frequency?.toLowerCase() || '').includes(searchLower)
+        (fee.class_name?.toLowerCase()     || '').includes(searchLower) ||
+        (fee.fee_head_name?.toLowerCase()  || '').includes(searchLower) ||
+        (fee.fee_frequency?.toLowerCase()  || '').includes(searchLower)
       );
     }
 
@@ -150,10 +138,7 @@ const FeeList = () => {
   };
 
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
   const confirmDelete = (fee) => {
@@ -172,18 +157,14 @@ const FeeList = () => {
     try {
       setDeletingId(feeToDelete.fee_id);
       setDeleteError('');
-      
+
       console.log('🗑️ Deleting fee with ID:', feeToDelete.fee_id);
 
       await feecreateService.deleteFee(feeToDelete.fee_id);
 
-      // Remove from state
       setFees(prev => prev.filter(fee => fee.fee_id !== feeToDelete.fee_id));
-
-      // Show success message
       setDeleteSuccess('✅ Fee structure deleted successfully!');
 
-      // Close modal after 2 seconds
       setTimeout(() => {
         setShowDeleteModal(false);
         setFeeToDelete(null);
@@ -199,19 +180,14 @@ const FeeList = () => {
   };
 
   const clearFilters = () => {
-    setFilters({
-      academicYear: '',
-      classId: '',
-      feeHeadId: '',
-      search: ''
-    });
+    setFilters({ academicYear: '', classId: '', feeHeadId: '', search: '' });
   };
 
   const formatCurrency = (amount) => {
     const numAmount = parseFloat(amount || 0);
     return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+      style:                 'currency',
+      currency:              'INR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(numAmount);
@@ -236,6 +212,7 @@ const FeeList = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="w-full">
+
         {/* Header */}
         <div className="mb-6 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -278,7 +255,6 @@ const FeeList = () => {
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              {/* Total Structures */}
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-600">Total Structures</h3>
@@ -290,7 +266,6 @@ const FeeList = () => {
                 <p className="text-gray-500 text-sm mt-1">All fee structures</p>
               </div>
 
-              {/* Active Fees */}
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-600">Active Fees</h3>
@@ -302,7 +277,6 @@ const FeeList = () => {
                 <p className="text-gray-500 text-sm mt-1">Currently assigned</p>
               </div>
 
-              {/* Estimated Revenue */}
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-600">Estimated Revenue</h3>
@@ -331,21 +305,28 @@ const FeeList = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Academic Year Filter */}
+
+                {/* ✅ Academic Year Filter — Dynamic from API */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Academic Year
                   </label>
-                  <select
-                    value={filters.academicYear}
-                    onChange={(e) => handleFilterChange('academicYear', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  >
-                    <option value="">All Years</option>
-                    {academicYears.map(year => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </select>
+                  {yearsLoading ? (
+                    <div className="w-full h-[42px] px-4 border border-gray-300 rounded-lg bg-gray-50 flex items-center gap-2 text-sm text-gray-400">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+                    </div>
+                  ) : (
+                    <select
+                      value={filters.academicYear}
+                      onChange={(e) => handleFilterChange('academicYear', e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    >
+                      <option value="">All Years</option>
+                      {academicYears.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Class Filter */}
@@ -411,27 +392,13 @@ const FeeList = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Class Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Fee Head
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Frequency
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Base Amount
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Total Amount
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Academic Year
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Class Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Fee Head</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Frequency</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Base Amount</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Total Amount</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Academic Year</th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -448,7 +415,7 @@ const FeeList = () => {
                             </div>
                             {fees.length === 0 && (
                               <button
-                                onClick={() => navigate('/create-fee')}
+                                onClick={() => navigate('/admin/fees/create')}
                                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                               >
                                 Create Fee Structure
@@ -510,9 +477,9 @@ const FeeList = () => {
                     <p className="text-sm text-blue-600">
                       Filters applied: {[
                         filters.academicYear && `Year: ${filters.academicYear}`,
-                        filters.classId && `Class: ${classes.find(c => c.class_id == filters.classId)?.class_name || filters.classId}`,
-                        filters.feeHeadId && `Fee Head: ${feeHeads.find(f => f.fee_head_id == filters.feeHeadId)?.head_name || filters.feeHeadId}`,
-                        filters.search && `Search: "${filters.search}"`
+                        filters.classId      && `Class: ${classes.find(c => c.class_id == filters.classId)?.class_name || filters.classId}`,
+                        filters.feeHeadId    && `Fee Head: ${feeHeads.find(f => f.fee_head_id == filters.feeHeadId)?.head_name || filters.feeHeadId}`,
+                        filters.search       && `Search: "${filters.search}"`
                       ].filter(Boolean).join(', ')}
                     </p>
                   ) : null}
@@ -549,7 +516,6 @@ const FeeList = () => {
               </div>
             </div>
 
-            {/* Success Message */}
             {deleteSuccess && (
               <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
@@ -562,7 +528,6 @@ const FeeList = () => {
               </div>
             )}
 
-            {/* Error Message */}
             {deleteError && (
               <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
@@ -587,7 +552,7 @@ const FeeList = () => {
                   setDeleteError('');
                   setDeleteSuccess('');
                 }}
-                disabled={deletingId}
+                disabled={!!deletingId}
                 className="px-4 py-2 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
               >
                 {deleteSuccess ? 'Close' : 'Cancel'}
@@ -595,7 +560,7 @@ const FeeList = () => {
               {!deleteSuccess && (
                 <button
                   onClick={handleDeleteFee}
-                  disabled={deletingId}
+                  disabled={!!deletingId}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
                 >
                   {deletingId ? (

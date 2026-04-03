@@ -1,27 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as createExamService from '../../services/examService/createExamService';
 import { toast } from 'react-hot-toast';
 
-const ACADEMIC_YEARS = [
-  '2026-27', '2027-28', '2028-29', '2029-30', '2030-31', '2031-32'
-];
-
 const CreateExam = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [yearsLoading, setYearsLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     exam_name: '',
     term: '',
     weightage_percentage: '',
-    academic_year: '2026-27',
+    academic_year: '',
     start_date: '',
     end_date: '',
     result_date: ''
   });
 
   const [errors, setErrors] = useState({});
+
+  // ✅ Service se academic years fetch
+  useEffect(() => {
+    const fetchAcademicYears = async () => {
+      try {
+        const data = await createExamService.getAcademicYears();
+        if (data.success && data.data.length > 0) {
+          const years = data.data.map(item => item.year_name);
+          setAcademicYears(years);
+          setFormData(prev => ({ ...prev, academic_year: years[0] }));
+        } else {
+          toast.error('No academic years found');
+        }
+      } catch (error) {
+        console.error('Error fetching academic years:', error);
+        toast.error('Failed to load academic years');
+      } finally {
+        setYearsLoading(false);
+      }
+    };
+
+    fetchAcademicYears();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,7 +77,6 @@ const CreateExam = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    // ✅ Snapshot exact values user selected before any async call
     const rawWeightage = formData.weightage_percentage;
     const parsedWeightage = (rawWeightage !== '' && rawWeightage !== null && rawWeightage !== undefined)
       ? parseFloat(String(rawWeightage))
@@ -116,25 +136,18 @@ const CreateExam = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
           {/* Header */}
-<div className="p-6 border-b border-gray-100 flex items-center justify-between">
-
-  {/* Left Side */}
-  <div>
-    <h1 className="text-2xl font-bold text-gray-800">Create Exam</h1>
-    <p className="text-sm text-gray-500 mt-1">
-      Define examination details and schedule
-    </p>
-  </div>
-
-  {/* Right Side Button */}
-  <button
-    onClick={() => navigate("/admin/exams")}
-    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-  >
-    View Exam List
-  </button>
-
-</div>
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Create Exam</h1>
+              <p className="text-sm text-gray-500 mt-1">Define examination details and schedule</p>
+            </div>
+            <button
+              onClick={() => navigate("/admin/exams")}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+            >
+              View Exam List
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="p-6">
             <div className="space-y-6">
@@ -200,9 +213,18 @@ const CreateExam = () => {
                   name="academic_year"
                   value={formData.academic_year}
                   onChange={handleChange}
+                  disabled={yearsLoading}
                   className={fieldCls('academic_year')}
                 >
-                  {ACADEMIC_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                  {yearsLoading ? (
+                    <option value="">Loading years...</option>
+                  ) : academicYears.length === 0 ? (
+                    <option value="">No academic years found</option>
+                  ) : (
+                    academicYears.map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))
+                  )}
                 </select>
                 {errors.academic_year && <p className="mt-1 text-sm text-red-600">{errors.academic_year}</p>}
               </div>
@@ -264,7 +286,7 @@ const CreateExam = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || yearsLoading}
                   className="flex-1 px-8 py-3 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (

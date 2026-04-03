@@ -1,5 +1,25 @@
 import { API_BASE_URL, getAuthToken } from '../api';
 
+export const getAcademicYears = async () => {
+  const token = getAuthToken();
+  if (!token) throw new Error('Authentication required');
+
+  const response = await fetch(`${API_BASE_URL}/schoolAdmin/getAcademicYears`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.status === 401) {
+    localStorage.removeItem('auth_token');
+    throw new Error('Session expired');
+  }
+
+  return await response.json();
+};
+
 export const createExam = async (payload) => {
   const token = getAuthToken();
   if (!token) throw new Error('Authentication required');
@@ -41,13 +61,11 @@ export const getAllExams = async () => {
   return await response.json();
 };
 
-// API expects exam_id in the BODY → PUT /schooladmin/updateExam
 export const updateExam = async (examId, payload) => {
   const token = getAuthToken();
   if (!token) throw new Error('Authentication required');
 
   const bodyPayload = { exam_id: examId, ...payload };
-
   console.log(`📤 PUT ${API_BASE_URL}/schooladmin/updateExam`, bodyPayload);
 
   const response = await fetch(`${API_BASE_URL}/schooladmin/updateExam`, {

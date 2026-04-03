@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Bus, User, MapPin, BookOpen, Calendar, CalendarCheck,
-  Plus, RotateCcw, Search, Edit2, Trash2, X,
+  Plus, RotateCcw, Search, X,
   ChevronDown, ChevronLeft, ChevronRight, AlertTriangle,
-  CheckCircle, Loader2, Navigation2, Phone, Truck,
+  CheckCircle, Loader2, Navigation2, Truck,
   DollarSign, Clock, BadgeCheck, AlertCircle,
   Filter, GraduationCap, Layers, Hash, Ban, List, ChevronUp
 } from 'lucide-react'
@@ -55,8 +55,6 @@ function DiscontinueModal({ item, onConfirm, onCancel, loading }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 animate-pop-in">
-
-        {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center shrink-0">
             <Ban size={20} className="text-amber-500" />
@@ -72,7 +70,6 @@ function DiscontinueModal({ item, onConfirm, onCancel, loading }) {
           </button>
         </div>
 
-        {/* Info strip */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5 flex items-start gap-2">
           <AlertTriangle size={14} className="text-amber-500 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-700 leading-relaxed">
@@ -81,21 +78,15 @@ function DiscontinueModal({ item, onConfirm, onCancel, loading }) {
           </p>
         </div>
 
-        {/* Fields */}
         <div className="flex flex-col gap-4 mb-6">
-
-          {/* Academic Year — read-only from row */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-              Academic Year
-            </label>
+            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Academic Year</label>
             <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 font-medium">
               <BookOpen size={14} className="text-gray-400" />
               {item?.academic_year || DEFAULT_AY}
             </div>
           </div>
 
-          {/* Discontinued On */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
               Discontinued On <span className="text-orange-500">*</span>
@@ -118,7 +109,6 @@ function DiscontinueModal({ item, onConfirm, onCancel, loading }) {
             )}
           </div>
 
-          {/* Reason */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
               Discontinue Reason <span className="text-orange-500">*</span>
@@ -140,21 +130,14 @@ function DiscontinueModal({ item, onConfirm, onCancel, loading }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-3">
-          <button
-            onClick={onCancel}
+          <button onClick={onCancel}
             className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
+          <button onClick={handleSubmit} disabled={loading}
             className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-            {loading
-              ? <Loader2 size={14} className="animate-spin" />
-              : <Ban size={14} />
-            }
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />}
             Confirm Discontinue
           </button>
         </div>
@@ -310,41 +293,48 @@ function InfoItem({ label, value, accent }) {
 export default function AssignStudentTransport() {
 
   // ── Data ──
-  const [classes,   setClasses]   = useState([])
-  const [sections,  setSections]  = useState([])
-  const [students,  setStudents]  = useState([])
-  const [routes,    setRoutes]    = useState([])
-  const [stops,     setStops]     = useState([])
+  const [classes,     setClasses]     = useState([])
+  const [sections,    setSections]    = useState([])
+  const [students,    setStudents]    = useState([])
+  const [routes,      setRoutes]      = useState([])
+  const [stops,       setStops]       = useState([])
   const [assignments, setAssignments] = useState([])
-  const [preview,   setPreview]   = useState(null)
+  const [preview,     setPreview]     = useState(null)
+
+  // ✅ Academic Years from API
+  const [academicYears,  setAcademicYears]  = useState([])
+  const [yearsLoading,   setYearsLoading]   = useState(true)
+  const [listYear,       setListYear]       = useState('')
 
   // ── Loading ──
-  const [classesLoading,  setClassesLoading]  = useState(true)
-  const [sectionsLoading, setSectionsLoading] = useState(false)
-  const [studentsLoading, setStudentsLoading] = useState(false)
-  const [routesLoading,   setRoutesLoading]   = useState(true)
-  const [stopsLoading,    setStopsLoading]    = useState(false)
-  const [submitLoading,   setSubmitLoading]   = useState(false)
+  const [classesLoading,     setClassesLoading]     = useState(true)
+  const [sectionsLoading,    setSectionsLoading]    = useState(false)
+  const [studentsLoading,    setStudentsLoading]    = useState(false)
+  const [routesLoading,      setRoutesLoading]      = useState(true)
+  const [stopsLoading,       setStopsLoading]       = useState(false)
+  const [submitLoading,      setSubmitLoading]      = useState(false)
   const [discontinueLoading, setDiscontinueLoading] = useState(false)
   const [assignmentsLoading, setAssignmentsLoading] = useState(false)
 
-  // ── Form ──
+  // ── Form — ✅ academic_year and academic_year_end REMOVED ──
   const [form, setForm] = useState({
-    class_id: '', section_id: '', student_id: '',
-    transport_route_id: '', transport_route_stop_id: '',
-    academic_year: DEFAULT_AY, academic_year_end: '', assigned_on: ''
+    class_id:                '',
+    section_id:              '',
+    student_id:              '',
+    transport_route_id:      '',
+    transport_route_stop_id: '',
+    assigned_on:             '',
   })
   const [formErrors, setFormErrors] = useState({})
 
   // ── Table ──
   const [search,            setSearch]            = useState('')
   const [page,              setPage]              = useState(1)
-  const [discontinueTarget, setDiscontinueTarget] = useState(null)  // replaces deleteTarget
+  const [discontinueTarget, setDiscontinueTarget] = useState(null)
   const [toasts,            setToasts]            = useState([])
-  const [showList,          setShowList]          = useState(false)  // toggle AssignedTransportList
+  const [showList,          setShowList]          = useState(false)
 
   // ── List filter states ──
-  const [listYear,    setListYear]    = useState(DEFAULT_AY)
   const [listClass,   setListClass]   = useState('all')
   const [listSection, setListSection] = useState('all')
   const [listData,    setListData]    = useState([])
@@ -358,6 +348,17 @@ export default function AssignStudentTransport() {
   }, [])
   const removeToast = id => setToasts(t => t.filter(x => x.id !== id))
 
+  // ✅ Load Academic Years from API on mount
+  useEffect(() => {
+    studentTransportService.getAcademicYears()
+      .then(years => {
+        setAcademicYears(years)
+        if (years.length) setListYear(years[0])
+      })
+      .catch(() => addToast('Failed to load academic years', 'error'))
+      .finally(() => setYearsLoading(false))
+  }, [addToast])
+
   // ── Load classes on mount ──
   useEffect(() => {
     ;(async () => {
@@ -365,11 +366,8 @@ export default function AssignStudentTransport() {
         setClassesLoading(true)
         const data = await studentTransportService.getClasses()
         setClasses(data)
-      } catch (err) {
-        addToast('Failed to load classes', 'error')
-      } finally {
-        setClassesLoading(false)
-      }
+      } catch { addToast('Failed to load classes', 'error') }
+      finally { setClassesLoading(false) }
     })()
   }, [addToast])
 
@@ -380,11 +378,8 @@ export default function AssignStudentTransport() {
         setRoutesLoading(true)
         const data = await studentTransportService.getRoutes()
         setRoutes(data)
-      } catch (err) {
-        addToast('Failed to load routes', 'error')
-      } finally {
-        setRoutesLoading(false)
-      }
+      } catch { addToast('Failed to load routes', 'error') }
+      finally { setRoutesLoading(false) }
     })()
   }, [addToast])
 
@@ -395,9 +390,8 @@ export default function AssignStudentTransport() {
         setAssignmentsLoading(true)
         const data = await studentTransportService.getAllAssignments()
         setAssignments(data)
-      } catch { /* silently fail */ } finally {
-        setAssignmentsLoading(false)
-      }
+      } catch { /* silently fail */ }
+      finally { setAssignmentsLoading(false) }
     })()
   }, [])
 
@@ -433,7 +427,7 @@ export default function AssignStudentTransport() {
     setPreview(null)
     if (!studentId) return
     try {
-      const data = await studentTransportService.getStudentTransport(studentId, form.academic_year || DEFAULT_AY)
+      const data = await studentTransportService.getStudentTransport(studentId, listYear || DEFAULT_AY)
       if (data) setPreview(data)
     } catch { /* no previous transport */ }
   }
@@ -451,17 +445,15 @@ export default function AssignStudentTransport() {
     finally { setStopsLoading(false) }
   }
 
-  // ── Validate ──
+  // ── Validate — ✅ academic_year & academic_year_end removed ──
   const validate = () => {
     const errs = {}
-    if (!form.class_id)                  errs.class_id                = 'Select a class'
-    if (!form.section_id)                errs.section_id              = 'Select a section'
-    if (!form.student_id)                errs.student_id              = 'Select a student'
-    if (!form.transport_route_id)        errs.transport_route_id      = 'Select a route'
-    if (!form.transport_route_stop_id)   errs.transport_route_stop_id = 'Select a stop'
-    if (!form.academic_year.trim())      errs.academic_year           = 'Required'
-    if (!form.academic_year_end)         errs.academic_year_end       = 'Required'
-    if (!form.assigned_on)               errs.assigned_on             = 'Required'
+    if (!form.class_id)                errs.class_id                = 'Select a class'
+    if (!form.section_id)              errs.section_id              = 'Select a section'
+    if (!form.student_id)              errs.student_id              = 'Select a student'
+    if (!form.transport_route_id)      errs.transport_route_id      = 'Select a route'
+    if (!form.transport_route_stop_id) errs.transport_route_stop_id = 'Select a stop'
+    if (!form.assigned_on)             errs.assigned_on             = 'Required'
     setFormErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -476,32 +468,30 @@ export default function AssignStudentTransport() {
         student_id:              Number(form.student_id),
         transport_route_id:      Number(form.transport_route_id),
         transport_route_stop_id: Number(form.transport_route_stop_id),
-        academic_year:           form.academic_year,
-        academic_year_end:       form.academic_year_end,
         assigned_on:             form.assigned_on,
       })
       addToast('Transport assigned successfully!')
 
-      const student  = students.find(s => String(s.student_id) === form.student_id)
-      const cls      = classes.find(c => String(c.class_id) === form.class_id)
-      const sec      = sections.find(s => String(s.section_id) === form.section_id)
-      const route    = routes.find(r => String(r.transport_route_id) === form.transport_route_id)
-      const stop     = stops.find(s => String(s.transport_route_stop_id) === form.transport_route_stop_id)
+      const student = students.find(s => String(s.student_id) === form.student_id)
+      const cls     = classes.find(c => String(c.class_id) === form.class_id)
+      const sec     = sections.find(s => String(s.section_id) === form.section_id)
+      const route   = routes.find(r => String(r.transport_route_id) === form.transport_route_id)
+      const stop    = stops.find(s => String(s.transport_route_stop_id) === form.transport_route_stop_id)
 
       const newRow = {
-        id:            res?.data?.id ?? Date.now(),
-        student_id:    Number(form.student_id),
-        student_name:  student?.name || student?.student_name || '—',
-        roll_number:   student?.roll_number || '',
-        class_name:    cls?.class_name || '—',
-        section_name:  sec?.section_name || '—',
-        route_name:    route?.route_name || '—',
-        stop_name:     stop?.stop_name   || '—',
-        vehicle_no:    route?.vehicle_no  || '—',
-        driver_name:   route?.driver_name || '—',
-        academic_year: form.academic_year,
-        assigned_on:   form.assigned_on,
-        fee_status:    'Pending',
+        id:           res?.data?.id ?? Date.now(),
+        student_id:   Number(form.student_id),
+        student_name: student?.name || student?.student_name || '—',
+        roll_number:  student?.roll_number || '',
+        class_name:   cls?.class_name  || '—',
+        section_name: sec?.section_name || '—',
+        route_name:   route?.route_name || '—',
+        stop_name:    stop?.stop_name   || '—',
+        vehicle_no:   route?.vehicle_no  || '—',
+        driver_name:  route?.driver_name || '—',
+        academic_year: listYear || DEFAULT_AY,
+        assigned_on:  form.assigned_on,
+        fee_status:   'Pending',
       }
       setAssignments(prev => [newRow, ...prev])
       handleReset()
@@ -515,9 +505,12 @@ export default function AssignStudentTransport() {
   // ── Reset ──
   const handleReset = () => {
     setForm({
-      class_id: '', section_id: '', student_id: '',
-      transport_route_id: '', transport_route_stop_id: '',
-      academic_year: DEFAULT_AY, academic_year_end: '', assigned_on: ''
+      class_id:                '',
+      section_id:              '',
+      student_id:              '',
+      transport_route_id:      '',
+      transport_route_stop_id: '',
+      assigned_on:             '',
     })
     setFormErrors({})
     setSections([]); setStudents([]); setStops([]); setPreview(null)
@@ -533,7 +526,6 @@ export default function AssignStudentTransport() {
         discontinued_on,
         discontinue_reason,
       })
-      // Mark row as discontinued in the table (optimistic)
       setAssignments(prev =>
         prev.map(a =>
           a.id === discontinueTarget.id
@@ -559,8 +551,6 @@ export default function AssignStudentTransport() {
   const paginated  = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE)
   useEffect(() => setPage(1), [search])
 
-  // ── Helpers ──
-
   // ── Fetch list data when year changes or showList opens ──
   useEffect(() => {
     if (!showList || !listYear) return
@@ -585,23 +575,15 @@ export default function AssignStudentTransport() {
 
   const listUniqueSections = [...new Map(
     listData
-      .filter(a => a.section_name &&
-        (listClass === 'all' || a.class_name === listClass))
+      .filter(a => a.section_name && (listClass === 'all' || a.class_name === listClass))
       .map(a => [a.section_name, { id: a.section_name, name: a.section_name }])
   ).values()].sort((a, b) => a.name.localeCompare(b.name))
-
-  // generate year options: current year ± 3
-  const listYearOptions = Array.from({ length: 6 }, (_, i) => {
-    const y = CURRENT_YEAR - 2 + i
-    return `${y}-${String(y + 1).slice(2)}`
-  }).reverse()
 
   const listFiltered = listData.filter(a => {
     const matchClass   = listClass   === 'all' || a.class_name   === listClass
     const matchSection = listSection === 'all' || a.section_name === listSection
     return matchClass && matchSection
   })
-
 
   const err  = (key) => formErrors[key]
   const setF = (key, val) => {
@@ -672,7 +654,7 @@ export default function AssignStudentTransport() {
               </div>
             </div>
 
-            {/* Row 1: Class, Section, Student, Route */}
+            {/* ✅ Row 1: Class, Section, Student, Route — same as before */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               <Field label="Class" required error={err('class_id')}>
                 <SelectField
@@ -718,8 +700,8 @@ export default function AssignStudentTransport() {
               </Field>
             </div>
 
-            {/* Row 2: Stop, Academic Year, Year End, Assigned On */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            {/* ✅ Row 2: Stop + Assigned On only (Academic Year & Year End REMOVED) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
               <Field label="Stop" required error={err('transport_route_stop_id')}>
                 <SelectField
                   value={form.transport_route_stop_id}
@@ -733,29 +715,6 @@ export default function AssignStudentTransport() {
                     </option>
                   ))}
                 </SelectField>
-              </Field>
-
-              <Field label="Academic Year" required error={err('academic_year')}>
-                <div className="relative">
-                  <BookOpen size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    placeholder="e.g. 2026-27" value={form.academic_year}
-                    onChange={e => setF('academic_year', e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400
-                      focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all"
-                  />
-                </div>
-              </Field>
-
-              <Field label="Academic Year End" required error={err('academic_year_end')}>
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input type="date" value={form.academic_year_end}
-                    onChange={e => setF('academic_year_end', e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800
-                      focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all"
-                  />
-                </div>
               </Field>
 
               <Field label="Assigned On" required error={err('assigned_on')}>
@@ -820,10 +779,10 @@ export default function AssignStudentTransport() {
               <InfoItem label="Distance (KM)"  value={preview.distance_km ? `${preview.distance_km} KM` : null} />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
-              <InfoItem label="Base Amount"     value={preview.base_amount     ? `$${preview.base_amount} / Term` : null} />
-              <InfoItem label="Assigned Amount" value={preview.assigned_amount ? `$${preview.assigned_amount}`   : null} />
-              <InfoItem label="Paid Amount"     value={preview.paid_amount     ? `$${preview.paid_amount}`       : null} accent="text-emerald-600" />
-              <InfoItem label="Pending Amount"  value={preview.pending_amount  ? `$${preview.pending_amount}`    : null} accent="text-red-500" />
+              <InfoItem label="Base Amount"     value={preview.base_amount     ? `₹${preview.base_amount} / Term` : null} />
+              <InfoItem label="Assigned Amount" value={preview.assigned_amount ? `₹${preview.assigned_amount}`   : null} />
+              <InfoItem label="Paid Amount"     value={preview.paid_amount     ? `₹${preview.paid_amount}`       : null} accent="text-emerald-600" />
+              <InfoItem label="Pending Amount"  value={preview.pending_amount  ? `₹${preview.pending_amount}`    : null} accent="text-red-500" />
               <InfoItem label="Fee Frequency"   value={preview.fee_frequency} />
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fee Status</span>
@@ -836,8 +795,6 @@ export default function AssignStudentTransport() {
         {/* ══════════════════════════════════════
             SECTION 3 — VIEW LIST TOGGLE
         ══════════════════════════════════════ */}
-
-        {/* Toggle Bar + Filters */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-4 mb-3 animate-fade-up">
           {/* Row 1: title + toggle btn */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -863,23 +820,30 @@ export default function AssignStudentTransport() {
             </button>
           </div>
 
-          {/* Row 2: Year first → then Class → Section */}
+          {/* Row 2: ✅ Academic Year from API → Class → Section */}
           <div className="flex items-center gap-3 flex-wrap">
 
-            {/* Academic Year — PRIMARY filter, triggers API */}
+            {/* ✅ Academic Year — Dynamic from API */}
             <div className="relative">
               <BookOpen size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-400 pointer-events-none z-10" />
-              <select
-                value={listYear}
-                onChange={e => setListYear(e.target.value)}
-                className="appearance-none pl-8 pr-9 py-2 bg-orange-50 border border-orange-300 rounded-xl
-                  text-sm text-orange-700 font-bold focus:outline-none focus:ring-2 focus:ring-orange-400/30
-                  focus:border-orange-500 transition-all min-w-[145px]">
-                {listYearOptions.map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-orange-400 pointer-events-none" />
+              {yearsLoading ? (
+                <div className="pl-8 pr-9 py-2 bg-orange-50 border border-orange-300 rounded-xl
+                  text-sm text-orange-700 font-bold flex items-center gap-2 min-w-[145px]">
+                  <Loader2 size={13} className="animate-spin text-orange-400" /> Loading…
+                </div>
+              ) : (
+                <select
+                  value={listYear}
+                  onChange={e => setListYear(e.target.value)}
+                  className="appearance-none pl-8 pr-9 py-2 bg-orange-50 border border-orange-300 rounded-xl
+                    text-sm text-orange-700 font-bold focus:outline-none focus:ring-2 focus:ring-orange-400/30
+                    focus:border-orange-500 transition-all min-w-[145px]">
+                  {academicYears.map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              )}
+              {!yearsLoading && <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-orange-400 pointer-events-none" />}
             </div>
 
             {/* Class */}
@@ -918,10 +882,8 @@ export default function AssignStudentTransport() {
               <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
 
-            {/* Loading spinner */}
             {listLoading && <Loader2 size={15} className="animate-spin text-orange-400" />}
 
-            {/* Clear class/section */}
             {(listClass !== 'all' || listSection !== 'all') && (
               <button
                 onClick={() => { setListClass('all'); setListSection('all') }}

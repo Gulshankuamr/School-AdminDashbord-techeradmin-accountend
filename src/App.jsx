@@ -379,11 +379,18 @@ function App() {
               <ExamList />
             </ProtectedRoute>
           }/>
-          <Route path="exams/add" element={
+          {/* <Route path="exams/add" element={
             <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
               <CreateExam />
             </ProtectedRoute>
-          }/>
+          }/> */}
+
+       <Route path="exams/add" element={
+  <ProtectedRoute permission={P.CREATE_EXAM}>
+    <CreateExam />
+  </ProtectedRoute>
+}/>
+
           <Route path="exams/timetable" element={
             <ProtectedRoute permission={P.VIEW_TIMETABLE}>
               <ViewExamTimetable />

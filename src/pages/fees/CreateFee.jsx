@@ -1,55 +1,62 @@
 // src/pages/CreateFee.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Copy, Calendar, Check, AlertCircle } from 'lucide-react';
+import { ChevronDown, Copy, Calendar, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { feecreateService } from '../../services/feeallService/feecreateService';
 
 const CreateFee = () => {
   const navigate = useNavigate();
   const previewRef = useRef(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
-    academicYear: '2026-27',
+    academicYear: '',
     classId: '',
     feeHeadId: '',
     baseAmount: '',
     feeFrequency: 'monthly',
-    startDueDate: '',   // ✅ NEW
-    endDueDate: '',     // ✅ NEW
+    startDueDate: '',
+    endDueDate: '',
   });
-  
+
   // Data from APIs
   const [classes, setClasses] = useState([]);
   const [feeHeads, setFeeHeads] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
+  // ✅ Academic Years from API
+  const [academicYears, setAcademicYears]   = useState([]);
+  const [yearsLoading,  setYearsLoading]    = useState(true);
+
   // Installment state
   const [installments, setInstallments] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [isGeneratingInstallments, setIsGeneratingInstallments] = useState(false);
-  
+
   // UI state
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [authError, setAuthError] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // Payment frequency options (Annually removed)
+  // Payment frequency options
   const frequencyOptions = [
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'quarterly', label: 'Quarterly' },
+    { value: 'monthly',     label: 'Monthly'     },
+    { value: 'quarterly',   label: 'Quarterly'   },
     { value: 'half_yearly', label: 'Half-Yearly' },
-    { value: 'one_time', label: 'One-Time' },
+    { value: 'one_time',    label: 'One-Time'    },
   ];
-  
-  // ✅ UPDATED: Dynamic academic years from 2026-27 to 2032-33
-  const academicYears = Array.from({ length: 7 }, (_, i) => {
-    const startYear = 2026 + i;
-    const endYear = (startYear + 1).toString().slice(-2);
-    const value = `${startYear}-${endYear}`;
-    return { value, label: value };
-  });
+
+  // ✅ Load Academic Years from API on mount
+  useEffect(() => {
+    feecreateService.getAcademicYears()
+      .then(years => {
+        setAcademicYears(years);
+        if (years.length) setFormData(prev => ({ ...prev, academicYear: years[0] }));
+      })
+      .catch(e => setError(e.message || 'Failed to load academic years'))
+      .finally(() => setYearsLoading(false));
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -59,14 +66,14 @@ const CreateFee = () => {
     try {
       setLoading(true);
       setAuthError('');
-      
+
       const classResponse = await feecreateService.getAllClasses();
       if (classResponse.data && Array.isArray(classResponse.data)) {
         setClasses(classResponse.data);
       } else {
         console.warn('Unexpected classes response structure:', classResponse);
       }
-      
+
       const feeHeadResponse = await feecreateService.getAllFeeHeads();
       if (feeHeadResponse.data?.fee_heads) {
         setFeeHeads(feeHeadResponse.data.fee_heads);
@@ -103,11 +110,9 @@ const CreateFee = () => {
     setIsGeneratingInstallments(true);
     setError('');
 
-    // Parse start and end dates (no timezone shift)
     const [sY, sM, sD] = formData.startDueDate.split('-').map(Number);
     const [eY, eM, eD] = formData.endDueDate.split('-').map(Number);
 
-    // Helper: format Date as YYYY-MM-DD
     const toDateStr = (date) => {
       const y = date.getFullYear();
       const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -115,56 +120,50 @@ const CreateFee = () => {
       return `${y}-${m}-${d}`;
     };
 
-    // Helper: add N months to a year+month pair, return { year, month (0-indexed) }
     const addMonths = (year, month0, n) => {
       const total = month0 + n;
       return { year: year + Math.floor(total / 12), month: total % 12 };
     };
 
-    // Helper: clamp day to last valid day of given month
     const clampDay = (year, month0, day) => {
       const max = new Date(year, month0 + 1, 0).getDate();
       return Math.min(day, max);
     };
 
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
-                   'July', 'August', 'September', 'October', 'November', 'December'];
+                    'July', 'August', 'September', 'October', 'November', 'December'];
 
-    // Fixed installment counts & step per frequency
     const freqConfig = {
-      monthly:    { count: 12, step: 1,  name: 'Monthly Installment' },
-      quarterly:  { count: 4,  step: 3,  name: 'Quarterly Installment' },
-      half_yearly:{ count: 2,  step: 6,  name: 'Half-Yearly Installment' },
-      one_time:   { count: 1,  step: 0,  name: 'One-Time Fee' },
+      monthly:     { count: 12, step: 1, name: 'Monthly Installment'     },
+      quarterly:   { count: 4,  step: 3, name: 'Quarterly Installment'   },
+      half_yearly: { count: 2,  step: 6, name: 'Half-Yearly Installment' },
+      one_time:    { count: 1,  step: 0, name: 'One-Time Fee'            },
     };
 
     const config = freqConfig[formData.feeFrequency] || freqConfig['monthly'];
     const newInstallments = [];
 
     for (let i = 0; i < config.count; i++) {
-      // Each installment's start_due_date: start date shifted by i * step months
-      const instStart = addMonths(sY, sM - 1, i * config.step);
+      const instStart    = addMonths(sY, sM - 1, i * config.step);
       const instStartDay = clampDay(instStart.year, instStart.month, sD);
       const instStartDate = new Date(instStart.year, instStart.month, instStartDay);
 
-      // Each installment's end_due_date: end date shifted by i * step months
-      const instEnd = addMonths(eY, eM - 1, i * config.step);
+      const instEnd    = addMonths(eY, eM - 1, i * config.step);
       const instEndDay = clampDay(instEnd.year, instEnd.month, eD);
       const instEndDate = new Date(instEnd.year, instEnd.month, instEndDay);
 
-      // Due date shown in table = start_due_date of that installment
       const dueDateStr = toDateStr(instStartDate);
       const endDateStr = toDateStr(instEndDate);
 
       newInstallments.push({
-        id: i + 1,
-        name: `${config.name} ${i + 1}`,
-        month: months[instStart.month],
-        year: instStart.year,
-        amount: baseAmount.toFixed(2),
-        dueDate: dueDateStr,
-        startDate: dueDateStr,
-        endDate: endDateStr,
+        id:          i + 1,
+        name:        `${config.name} ${i + 1}`,
+        month:       months[instStart.month],
+        year:        instStart.year,
+        amount:      baseAmount.toFixed(2),
+        dueDate:     dueDateStr,
+        startDate:   dueDateStr,
+        endDate:     endDateStr,
         displayDate: `${months[instStart.month].substring(0, 3)} ${instStart.year}`
       });
     }
@@ -172,7 +171,7 @@ const CreateFee = () => {
     setInstallments(newInstallments);
     setTotalAmount(baseAmount * newInstallments.length);
     setIsGeneratingInstallments(false);
-    
+
     setTimeout(() => {
       if (previewRef.current) {
         previewRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -199,7 +198,6 @@ const CreateFee = () => {
   };
 
   const handlePreviewClick = () => {
-    // ✅ Validate due dates before generating
     if (!formData.startDueDate) {
       setError('Please select a Start Due Date');
       return;
@@ -221,39 +219,38 @@ const CreateFee = () => {
       setError('');
       setSuccess('');
 
-      // ✅ Payload now includes start_due_date and end_due_date as required by API
       const payload = {
-        class_id: parseInt(formData.classId),
-        fee_head_id: parseInt(formData.feeHeadId),
-        base_amount: formData.baseAmount,
-        fee_frequency: formData.feeFrequency,
-        academic_year: formData.academicYear,
+        class_id:       parseInt(formData.classId),
+        fee_head_id:    parseInt(formData.feeHeadId),
+        base_amount:    formData.baseAmount,
+        fee_frequency:  formData.feeFrequency,
+        academic_year:  formData.academicYear,
         start_due_date: formData.startDueDate,
-        end_due_date: formData.endDueDate,
+        end_due_date:   formData.endDueDate,
       };
 
       console.log('🚀 Creating fee with payload:', payload);
 
       const response = await feecreateService.createFee(payload);
-      
+
       if (response.success) {
         setShowConfirmModal(false);
         setSuccess('✅ Fee structure created successfully!');
-        
+
         setFormData({
-          academicYear: '2026-27',
-          classId: '',
-          feeHeadId: '',
-          baseAmount: '',
-          feeFrequency: 'monthly',
-          startDueDate: '',
-          endDueDate: '',
+          academicYear:  academicYears[0] || '',
+          classId:       '',
+          feeHeadId:     '',
+          baseAmount:    '',
+          feeFrequency:  'monthly',
+          startDueDate:  '',
+          endDueDate:    '',
         });
         setInstallments([]);
         setTotalAmount(0);
-        
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
         setTimeout(() => {
           navigate('/admin/fees/create');
         }, 1500);
@@ -269,8 +266,8 @@ const CreateFee = () => {
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+      style:                 'currency',
+      currency:              'INR',
       minimumFractionDigits: 2
     }).format(amount);
   };
@@ -292,7 +289,7 @@ const CreateFee = () => {
                 Define how fees are collected for the upcoming academic session
               </p>
             </div>
-            <button 
+            <button
               onClick={() => navigate('/admin/fees/preview')}
               className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 w-full md:w-auto"
             >
@@ -352,6 +349,7 @@ const CreateFee = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column - Main Form */}
               <div className="lg:col-span-2 space-y-6">
+
                 {/* Step 1 - Fee Configuration */}
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                   <div className="flex items-center gap-3 mb-6">
@@ -365,24 +363,31 @@ const CreateFee = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Academic Year */}
+
+                    {/* ✅ Academic Year — Dynamic from API */}
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
                         Academic Year *
                       </label>
-                      <div className="relative">
-                        <select
-                          value={formData.academicYear}
-                          onChange={(e) => handleInputChange('academicYear', e.target.value)}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-gray-900"
-                          disabled={loading}
-                        >
-                          {academicYears.map(year => (
-                            <option key={year.value} value={year.value}>{year.label}</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                      </div>
+                      {yearsLoading ? (
+                        <div className="w-full h-[42px] px-4 border border-gray-300 rounded-lg bg-gray-50 flex items-center gap-2 text-sm text-gray-400">
+                          <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <select
+                            value={formData.academicYear}
+                            onChange={(e) => handleInputChange('academicYear', e.target.value)}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-gray-900"
+                            disabled={loading}
+                          >
+                            {academicYears.map(year => (
+                              <option key={year} value={year}>{year}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
+                      )}
                     </div>
 
                     {/* Class/Grade */}
@@ -494,7 +499,7 @@ const CreateFee = () => {
                     </p>
                   </div>
 
-                  {/* ✅ NEW: Start & End Due Date Fields */}
+                  {/* Start & End Due Date Fields */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-900 mb-3">
                       Due Date Range *
@@ -608,7 +613,6 @@ const CreateFee = () => {
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Amount (₹)</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Start Due Date</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">End Due Date</th>
-                            {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">Due Date</th> */}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -635,17 +639,6 @@ const CreateFee = () => {
                               <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                                 {inst.endDate}
                               </td>
-                              {/* <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="w-4 h-4 text-gray-500" />
-                                  <input
-                                    type="date"
-                                    value={inst.dueDate}
-                                    onChange={(e) => handleInstallmentChange(index, 'dueDate', e.target.value)}
-                                    className="px-3 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                                  />
-                                </div>
-                              </td> */}
                             </tr>
                           ))}
                         </tbody>
@@ -663,13 +656,13 @@ const CreateFee = () => {
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 sticky top-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-6">Structure Summary</h3>
-                  
+
                   <div className="space-y-6">
                     {/* Total Fee */}
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-900">Total Fee</span>
-                        <button 
+                        <button
                           className="p-1 hover:bg-blue-100 rounded"
                           onClick={() => navigator.clipboard.writeText(totalAmount.toString())}
                           title="Copy amount"
@@ -705,7 +698,6 @@ const CreateFee = () => {
                         <span className="font-semibold text-gray-900">{formData.academicYear}</span>
                       </div>
 
-                      {/* ✅ Due dates in summary */}
                       {formData.startDueDate && (
                         <div className="flex justify-between items-center">
                           <span className="text-gray-900">Start Due Date</span>
@@ -733,22 +725,22 @@ const CreateFee = () => {
 
                     {/* Action Buttons */}
                     <div className="space-y-3 pt-4">
-                      <button 
+                      <button
                         onClick={() => {
                           setInstallments([]);
                           setTotalAmount(0);
                           setFormData(prev => ({
                             ...prev,
-                            baseAmount: '',
+                            baseAmount:   '',
                             startDueDate: '',
-                            endDueDate: '',
+                            endDueDate:   '',
                           }));
                         }}
                         className="w-full px-4 py-2.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
                       >
                         Edit Base Fee
                       </button>
-                      <button 
+                      <button
                         onClick={() => setShowConfirmModal(true)}
                         disabled={loading || installments.length === 0}
                         className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -793,7 +785,7 @@ const CreateFee = () => {
                 <p className="text-gray-700 text-sm">Are you sure you want to create this fee structure?</p>
               </div>
             </div>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -812,7 +804,6 @@ const CreateFee = () => {
                   <span className="text-sm text-gray-700">Total Amount:</span>
                   <span className="font-semibold text-gray-900">{formatCurrency(totalAmount)}</span>
                 </div>
-                {/* ✅ Dates shown in modal */}
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-700">Start Due Date:</span>
                   <span className="font-semibold text-gray-900">{formData.startDueDate || '—'}</span>
