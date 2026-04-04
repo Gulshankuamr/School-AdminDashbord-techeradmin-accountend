@@ -167,44 +167,86 @@ export const sidebarMenuItems = [
     ],
   },
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 📅 ATTENDANCE
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  {
-    id:      'group-attendance',
-    label:   'Attendance',
-    icon:    ClipboardCheck,
-    isGroup: true,
-    color:   'green',
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📅 ATTENDANCE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{
+  id:      'group-attendance',
+  label:   'Attendance',
+  icon:    ClipboardCheck,
+  isGroup: true,
+  color:   'green',
 
-    items: [
+  items: [
 
-      {
-        id:         'student-attendance',
-        label:      'Student Attendance',
-        icon:       Users,
-        path:       '/admin/attendance',
-        permission: [P.MARK_STUDENT_ATTENDANCE, P.VIEW_ALL_STUDENT],
-      },
+    {
+      id:          'student-attendance',
+      label:       'Student Attendance',
+      icon:        Users,
+      hasDropdown: true,
+      permission:  [P.MARK_STUDENT_ATTENDANCE, P.VIEW_ALL_STUDENT],
+      subItems: [
+        {
+          id:         'mark-student-attendance',
+          label:      'Mark Attendance',
+          path:       '/admin/attendance',
+          permission: P.MARK_STUDENT_ATTENDANCE,
+        },
+        {
+          id:         'student-attendance-list',
+          label:      'Attendance List',
+          path:       '/admin/attendance/list',
+          permission: P.VIEW_ALL_STUDENT,
+        },
+      ],
+    },
 
-      {
-        id:         'teacher-attendance',
-        label:      'Teacher Attendance',
-        icon:       BookUser,
-        path:       '/admin/teacher-attendance',
-        permission: P.VIEW_ONE_TEACHER_ATTENDANCE,
-      },
+    {
+      id:          'teacher-attendance',
+      label:       'Teacher Attendance',
+      icon:        BookUser,
+      hasDropdown: true,
+      permission:  P.VIEW_ONE_TEACHER_ATTENDANCE,
+      subItems: [
+        {
+          id:         'mark-teacher-attendance',
+          label:      'Mark Attendance',
+          path:       '/admin/teacher-attendance',
+          permission: P.VIEW_ONE_TEACHER_ATTENDANCE,
+        },
+        {
+          id:         'teacher-attendance-list',
+          label:      'Attendance List',
+          path:       '/admin/teacher-attendance/list',
+          permission: P.VIEW_ONE_TEACHER_ATTENDANCE,
+        },
+      ],
+    },
 
-      {
-        id:         'accountant-attendance',
-        label:      'Accountant Attendance',
-        icon:       Wallet,
-        path:       '/admin/accountant-attendance',
-        permission: P.VIEW_ACCOUNTANTS,
-      },
+    {
+      id:          'accountant-attendance',
+      label:       'Accountant Attendance',
+      icon:        Wallet,
+      hasDropdown: true,
+      permission:  P.VIEW_ACCOUNTANTS,
+      subItems: [
+        {
+          id:         'mark-accountant-attendance',
+          label:      'Mark Attendance',
+          path:       '/admin/accountant-attendance',
+          permission: P.VIEW_ACCOUNTANTS,
+        },
+        {
+          id:         'accountant-attendance-list',
+          label:      'Attendance List',
+          path:       '/admin/accountant-attendance/list',
+          permission: P.VIEW_ACCOUNTANTS,
+        },
+      ],
+    },
 
-    ],
-  },
+  ],
+},
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // 🚍 TRANSPORT
