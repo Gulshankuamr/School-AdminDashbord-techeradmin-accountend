@@ -135,7 +135,6 @@ const AssignMarks = () => {
           })
         : ''
       setExamData({
-        // ✅ FIX: parseFloat for max_marks & min_passing_marks (API returns strings)
         maxMarks:  parseFloat(match.max_marks)         || 100,
         minPass:   parseFloat(match.min_passing_marks) || 33,
         date:      rawDate,
@@ -167,9 +166,10 @@ const AssignMarks = () => {
         student_id: item.student_id,
         name:       item.name        || item.student_name || `Student ${item.student_id}`,
         rollNo:     item.roll_no     || item.admission_no || item.student_id,
-        marks:      0,
+        // ✅ FIX: default marks is '' (empty string) — NOT 0
+        marks:      '',
         is_absent:  false,
-        status:     'ABSENT',
+        status:     'PENDING',
         remark:     '',
         avatar:     item.avatar      || item.profile_image || item.photo || null,
       }))
@@ -189,33 +189,50 @@ const AssignMarks = () => {
   // ═══════════════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════════════
+
+  // ✅ FIX: handle '' (empty) marks as PENDING state
   const computeStatus = (marks, isAbsent) => {
     if (isAbsent) return 'ABSENT'
-    if (!marks || marks === 0) return 'FAIL'
-    return marks >= examData.minPass ? 'PASS' : 'FAIL'
+    if (marks === '' || marks === null || marks === undefined) return 'PENDING'
+    const numMarks = Number(marks)
+    if (isNaN(numMarks)) return 'PENDING'
+    return numMarks >= examData.minPass ? 'PASS' : 'FAIL'
   }
 
-  // ✅ FIX: average ab actual maxMarks use karta hai
   const computeStats = (list) => {
     const total   = list.length
     const absent  = list.filter((s) => s.is_absent).length
     const present = total - absent
-    const presentStudents = list.filter((s) => !s.is_absent)
-    const totalMarks = presentStudents.reduce((sum, s) => sum + (s.marks || 0), 0)
-    const totalMax   = presentStudents.reduce((sum, s) => sum + examData.maxMarks, 0)
-    const avg = present > 0 && totalMax > 0
+    // Only count students who have actually entered marks
+    const presentWithMarks = list.filter((s) => !s.is_absent && s.marks !== '')
+    const totalMarks = presentWithMarks.reduce((sum, s) => sum + (Number(s.marks) || 0), 0)
+    const totalMax   = presentWithMarks.length * examData.maxMarks
+    const avg = presentWithMarks.length > 0 && totalMax > 0
       ? ((totalMarks / totalMax) * 100).toFixed(1)
       : '0.0'
     setStats({ total, present, absent, average: avg })
   }
 
+  // ✅ FIX: empty string allowed, leading zeros stripped automatically by number input
   const handleMarksChange = (studentId, value) => {
-    // ✅ FIX: parseInt se NaN aata tha empty string pe — Number() use karo
+    // User cleared the field → set to ''
+    if (value === '' || value === null) {
+      const updated = students.map((s) =>
+        s.id === studentId ? { ...s, marks: '', status: 'PENDING' } : s
+      )
+      setStudents(updated)
+      computeStats(updated)
+      return
+    }
+
     let marks = Number(value)
-    if (isNaN(marks) || marks < 0) marks = 0
-    marks = Math.min(marks, examData.maxMarks)
+    if (isNaN(marks) || marks < 0) marks = ''
+    else marks = Math.min(marks, examData.maxMarks)
+
     const updated = students.map((s) =>
-      s.id === studentId ? { ...s, marks, status: computeStatus(marks, s.is_absent) } : s
+      s.id === studentId
+        ? { ...s, marks, status: computeStatus(marks, s.is_absent) }
+        : s
     )
     setStudents(updated)
     computeStats(updated)
@@ -228,8 +245,9 @@ const AssignMarks = () => {
       return {
         ...s,
         is_absent: newAbsent,
-        marks:     newAbsent ? 0 : s.marks,
-        status:    computeStatus(newAbsent ? 0 : s.marks, newAbsent),
+        // ✅ FIX: reset marks to '' not 0 when marking absent
+        marks:     newAbsent ? '' : s.marks,
+        status:    computeStatus(newAbsent ? '' : s.marks, newAbsent),
       }
     })
     setStudents(updated)
@@ -249,12 +267,14 @@ const AssignMarks = () => {
     if (students.length === 0)
       return setMessage({ type: 'error', text: 'No students loaded.' })
 
-    // ✅ FIX: present students with 0 marks ko properly validate karo
-    const invalid = students.filter((s) => !s.is_absent && (s.marks === 0 || s.marks === ''))
+    // ✅ FIX: present students must have marks entered (not '' and not 0)
+    const invalid = students.filter(
+      (s) => !s.is_absent && (s.marks === '' || Number(s.marks) === 0)
+    )
     if (invalid.length > 0)
       return setMessage({
         type: 'error',
-        text: `${invalid.length} present student(s) have 0 marks. Enter marks or mark as absent.`,
+        text: `${invalid.length} present student(s) have no marks entered. Enter marks or mark as absent.`,
       })
 
     setSaving(true)
@@ -267,7 +287,6 @@ const AssignMarks = () => {
           ? `✅ ${result.message}`
           : `⚠️ ${result.message}${result.errors?.length ? ` — Failed IDs: ${result.errors.map((e) => e.studentId).join(', ')}` : ''}`,
       })
-      // ✅ FIX: success ke baad auto scroll to top
       if (result.success) window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setMessage({ type: 'error', text: err.message || 'Failed to save marks.' })
@@ -278,15 +297,17 @@ const AssignMarks = () => {
 
   // ─── Style helpers ────────────────────────────────────────────
   const statusColor = (s) => ({
-    PASS:   'text-green-600  bg-green-50  border border-green-200',
-    FAIL:   'text-red-600    bg-red-50    border border-red-200',
-    ABSENT: 'text-orange-600 bg-orange-50 border border-orange-200',
+    PASS:    'text-green-600  bg-green-50  border border-green-200',
+    FAIL:    'text-red-600    bg-red-50    border border-red-200',
+    ABSENT:  'text-orange-600 bg-orange-50 border border-orange-200',
+    PENDING: 'text-gray-400   bg-gray-50   border border-gray-200',
   }[s] || '')
 
   const marksInputBorder = (s) => ({
-    PASS:   'border-green-400 focus:ring-green-200',
-    FAIL:   'border-red-400   focus:ring-red-200',
-    ABSENT: 'border-gray-200  bg-gray-100 cursor-not-allowed',
+    PASS:    'border-green-400 focus:ring-green-200',
+    FAIL:    'border-red-400   focus:ring-red-200',
+    ABSENT:  'border-gray-200  bg-gray-100 cursor-not-allowed',
+    PENDING: 'border-gray-300  focus:ring-blue-200',
   }[s] || 'border-gray-300')
 
   const initials = (name = '') =>
@@ -495,7 +516,7 @@ const AssignMarks = () => {
         <div className="grid grid-cols-[80px_1fr_220px_100px_1fr] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-black uppercase tracking-wide">
           <span>Roll No</span>
           <span>Student Name</span>
-          <span>Marks Obtained ({examData.maxMarks} max)</span>
+          <span>Marks ({examData.maxMarks} max)</span>
           <span>Absent</span>
           <span>Remarks / Comments</span>
         </div>
@@ -547,23 +568,28 @@ const AssignMarks = () => {
               <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  value={student.marks}
+                  // ✅ KEY FIX: value is '' when no marks, never shows 0 by default
+                  value={student.is_absent ? '' : student.marks}
                   disabled={student.is_absent}
                   onChange={(e) => handleMarksChange(student.id, e.target.value)}
                   className={`w-20 border rounded-lg px-3 py-1.5 text-sm text-center text-black font-semibold focus:outline-none focus:ring-2 transition-all ${marksInputBorder(student.status)}`}
                   min="0"
                   max={examData.maxMarks}
-                  placeholder="0"
+                  // ✅ FIX: placeholder shows dash instead of 0
+                  placeholder="—"
                 />
-                {/* ✅ FIX: percentage bhi dikhao */}
-                {!student.is_absent && student.marks > 0 && (
+                {/* Percentage only shown when marks actually entered and > 0 */}
+                {!student.is_absent && student.marks !== '' && Number(student.marks) > 0 && (
                   <span className="text-xs text-gray-400 font-medium">
-                    {((student.marks / examData.maxMarks) * 100).toFixed(0)}%
+                    {((Number(student.marks) / examData.maxMarks) * 100).toFixed(0)}%
                   </span>
                 )}
-                <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(student.status)}`}>
-                  {student.status}
-                </span>
+                {/* Status badge only shown when not in PENDING state */}
+                {student.status !== 'PENDING' && (
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(student.status)}`}>
+                    {student.status}
+                  </span>
+                )}
               </div>
 
               {/* Absent Toggle */}
@@ -619,7 +645,6 @@ const AssignMarks = () => {
               {String(stats.absent).padStart(2, '0')}
             </span>
           </div>
-          {/* ✅ FIX: Pass/Fail counts bhi dikhao */}
           <div>
             <span className="text-gray-500 font-medium">PASS</span>
             <span className="ml-2 font-bold text-green-600">{passCount}</span>
