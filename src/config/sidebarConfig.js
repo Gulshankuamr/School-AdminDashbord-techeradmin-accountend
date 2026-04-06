@@ -348,29 +348,29 @@ export const sidebarMenuItems = [
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // ⚙️ SYSTEM SETTINGS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // {
-  //   id:      'group-system',
-  //   label:   'System Settings',
-  //   icon:    Cpu,
-  //   isGroup: true,
-  //   color:   'gray',
+  {
+    id:      'group-system',
+    label:   'System Settings',
+    icon:    Cpu,
+    isGroup: true,
+    color:   'gray',
 
-  //   items: [
+    items: [
 
-  //     {
-  //       id:          'settings',
-  //       label:       'Settings',
-  //       icon:        Settings,
-  //       hasDropdown: true,
-  //       adminOnly:   true,
-  //       permission:  P.MANAGE_PERMISSIONS,
-  //       subItems: [
-  //         { id: 'role-permissions', label: 'Role Permissions', path: '/admin/settings/role-permissions', permission: P.MANAGE_PERMISSIONS, adminOnly: true },
-  //         { id: 'user-permissions', label: 'User Permissions', path: '/admin/settings/user-permissions', permission: P.MANAGE_PERMISSIONS, adminOnly: true },
-  //       ],
-  //     },
+      {
+        id:          'settings',
+        label:       'Settings',
+        icon:        Settings,
+        hasDropdown: true,
+        adminOnly:   true,
+        permission:  P.MANAGE_PERMISSIONS,
+        subItems: [
+          { id: 'role-permissions', label: 'Role Permissions', path: '/admin/settings/role-permissions', permission: P.MANAGE_PERMISSIONS, adminOnly: true },
+          { id: 'user-permissions', label: 'User Permissions', path: '/admin/settings/user-permissions', permission: P.MANAGE_PERMISSIONS, adminOnly: true },
+        ],
+      },
 
-  //   ],
-  // },
+    ],
+  },
 
 ]
