@@ -4,7 +4,8 @@ import {
   ArrowLeft, AlertTriangle, CheckCircle, Ban,
   ChevronDown, FileText, Loader2, XCircle, X,
   BookOpen, Bus, MapPin, Navigation, Clock,
-  Banknote, Smartphone, BookCheck, Landmark, CreditCard
+  Banknote, Smartphone, BookCheck, Landmark, CreditCard,
+  TrendingUp, Wallet, AlertCircle, Receipt
 } from 'lucide-react';
 import feePaymentService from '../../services/feeallService/feePaymentService';
 
@@ -17,11 +18,6 @@ const fmtDate = (d) => {
   try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
   catch { return String(d); }
 };
-
-// const ACADEMIC_YEARS = Array.from({ length: 7 }, (_, i) => {
-//   const s = 2026 + i;
-//   return `${s}-${(s + 1).toString().slice(-2)}`;
-// });
 
 const DISCONTINUE_REASONS = [
   'Student left school', 'Service/facility stopped', 'Scholarship granted',
@@ -59,6 +55,28 @@ const Tab = ({ active, onClick, children }) => (
     {children}
   </button>
 );
+
+/* ── Status Badge ── */
+const StatusBadge = ({ status, discontinuedOn }) => {
+  if (discontinuedOn) return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
+      <Ban className="w-3 h-3" /> Disc.
+    </span>
+  );
+  const map = {
+    paid:    { bg: '#DCFCE7', color: '#15803D', dot: '#22C55E', label: 'Paid' },
+    partial: { bg: '#FEF9C3', color: '#A16207', dot: '#EAB308', label: 'Partial' },
+    pending: { bg: '#FEE2E2', color: '#B91C1C', dot: '#EF4444', label: 'Pending' },
+  };
+  const s = map[status?.toLowerCase()] || { bg: '#F1F5F9', color: '#475569', dot: '#94A3B8', label: status || '—' };
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+      style={{ background: s.bg, color: s.color }}>
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.dot }} />
+      {s.label}
+    </span>
+  );
+};
 
 /* ══════════════════════════════════════════════════════════ */
 const StudentFeeProfile = () => {
@@ -160,15 +178,28 @@ const StudentFeeProfile = () => {
   const av             = getAvatar(studentInfo?.name || '');
   const paymentHistory = apiData?.payment_history || [];
   const pendingCount   = assignedFees.filter(f => parseFloat(f.pending_amount) > 0 && !f.discontinued_on).length;
-  const totalHistoryAmt = paymentHistory.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+
+  // ✅ Total Fee = base_amount sum (original fee when created, no fine)
+  const totalBaseAmount = assignedFees.reduce((s, f) => s + parseFloat(f.base_amount || 0), 0);
+
+  // ✅ Paid Amount = paid + fine (actual money collected from student)
+  const paidAmountWithFine = (cy.paid || 0) + (cy.fine || 0);
+
+  // ✅ Total Collected in history = amount + fine_amount per transaction
+  const totalHistoryAmt = paymentHistory.reduce(
+    (s, p) => s + parseFloat(p.amount || 0) + parseFloat(p.fine_amount || 0),
+    0
+  );
 
   return (
     <div className="min-h-screen bg-gray-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
-        @keyframes slideIn  { from { opacity:0; transform:translateX(20px);  } to { opacity:1; transform:translateX(0);     } }
-        @keyframes modalIn  { from { opacity:0; transform:translateY(16px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
         .modal-enter { animation: modalIn 0.25s ease both; }
+        .fee-row:hover { background: #FAFAFA; }
+        .progress-bar { transition: width 0.6s ease; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #EA580C !important; box-shadow: 0 0 0 3px rgba(234,88,12,0.12); }
       `}</style>
 
@@ -184,54 +215,82 @@ const StudentFeeProfile = () => {
           <h1 className="text-2xl font-bold text-gray-900">Student Fee Profile</h1>
           <p className="text-gray-500 text-sm mt-0.5">Manage and view detailed fee information</p>
         </div>
-        {/* <select value={academicYear} onChange={e => setAcademicYear(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-gray-300 text-gray-900 text-sm font-semibold bg-white focus:outline-none"
-          style={{ minWidth: 180 }}>
-          {ACADEMIC_YEARS.map(yr => <option key={yr} value={yr}>Academic Year {yr}</option>)}
-        </select> */}
       </div>
 
       {/* ── Student Info Card ── */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-5">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
+          <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold flex-shrink-0"
             style={{ background: av.bg, color: av.text }}>
             {studentInfo?.name?.charAt(0)?.toUpperCase()}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-900">{studentInfo?.name}</h2>
             <div className="flex items-center gap-4 mt-1 flex-wrap">
               <span className="text-sm text-gray-500">🪪 {studentInfo?.admission_no}</span>
-              <span className="text-sm text-gray-500">📚 {studentInfo?.class_name} - {studentInfo?.section_name}</span>
+              <span className="text-sm text-gray-500">📚 {studentInfo?.class_name} – {studentInfo?.section_name}</span>
               {studentInfo?.joined_on && <span className="text-sm text-gray-500">📅 Joined {fmtDate(studentInfo.joined_on)}</span>}
             </div>
           </div>
+          <span className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-50 text-orange-600 border border-orange-100">
+            AY {academicYear}
+          </span>
         </div>
       </div>
 
       {/* ── Summary Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        {[
-          { label: 'Total Fee',   value: cy.total   || 0, sub: 'Standard annual curriculum',                                         color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
-          { label: 'Paid Amount', value: cy.paid    || 0, sub: `${cy.total ? Math.round((cy.paid/cy.total)*100) : 0}% of total`,     color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0' },
-          { label: 'Pending',     value: cy.pending || 0, sub: cy.pending > 0 ? 'Next due: Soon' : 'No pending dues',                color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
-          { label: 'Late Fine',   value: cy.fine    || 0, sub: cy.fine > 0 ? 'Applied for overdue fees' : 'No fines',                color: '#DC2626', bg: '#FFF5F5', border: '#FECACA' },
-        ].map(({ label, value, sub, color, bg, border }) => (
-          <div key={label} className="rounded-xl border p-5" style={{ background: bg, borderColor: border }}>
-            <p className="text-sm font-semibold mb-1" style={{ color }}>{label}</p>
-            <p className="text-2xl font-bold mb-1" style={{ color }}>{fmt(value)}</p>
-            <p className="text-xs" style={{ color, opacity: 0.7 }}>{sub}</p>
+
+        {/* ✅ Total Fee = base_amount (original fee, NO fine) */}
+        <div className="rounded-2xl border p-5 bg-blue-50 border-blue-100 relative overflow-hidden">
+          <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+            <Receipt className="w-4 h-4 text-blue-600" />
           </div>
-        ))}
+          <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Total Fee</p>
+          <p className="text-2xl font-extrabold text-blue-700 mb-1">{fmt(totalBaseAmount)}</p>
+          <p className="text-xs text-blue-400">Base fee assigned</p>
+        </div>
+
+        {/* ✅ Total Paid = paid + fine (actual collected) */}
+        <div className="rounded-2xl border p-5 bg-green-50 border-green-100 relative overflow-hidden">
+          <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center">
+            <Wallet className="w-4 h-4 text-green-600" />
+          </div>
+          <p className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2">Total Paid</p>
+          <p className="text-2xl font-extrabold text-green-700 mb-1">{fmt(paidAmountWithFine)}</p>
+          <p className="text-xs text-green-400">
+            {fmt(cy.paid || 0)} fee {cy.fine > 0 ? `+ ${fmt(cy.fine)} fine` : ''}
+          </p>
+        </div>
+
+        {/* Pending */}
+        <div className="rounded-2xl border p-5 bg-amber-50 border-amber-100 relative overflow-hidden">
+          <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+            <AlertCircle className="w-4 h-4 text-amber-600" />
+          </div>
+          <p className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Pending</p>
+          <p className="text-2xl font-extrabold text-amber-700 mb-1">{fmt(cy.pending || 0)}</p>
+          <p className="text-xs text-amber-400">{cy.pending > 0 ? 'Due soon' : 'No pending dues'}</p>
+        </div>
+
+        {/* Late Fine */}
+        <div className="rounded-2xl border p-5 bg-red-50 border-red-100 relative overflow-hidden">
+          <div className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-red-500" />
+          </div>
+          <p className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Late Fine</p>
+          <p className="text-2xl font-extrabold text-red-600 mb-1">{fmt(cy.fine || 0)}</p>
+          <p className="text-xs text-red-300">{cy.fine > 0 ? 'Applied for overdue' : 'No fines'}</p>
+        </div>
+
       </div>
 
       {/* ── Main Card with Tabs ── */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
         {/* Tab Bar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/60">
           <div className="flex items-center gap-2">
-            {/* Academic Fees Tab */}
             <Tab active={activeTab === 'fees'} onClick={() => setActiveTab('fees')}>
               <span className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
@@ -241,94 +300,137 @@ const StudentFeeProfile = () => {
                 )}
               </span>
             </Tab>
-            {/* Payment History Tab */}
             <Tab active={activeTab === 'history'} onClick={() => setActiveTab('history')}>
               <span className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Payment History
                 {paymentHistory.length > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">{paymentHistory.length}</span>
+                  <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-gray-200 text-gray-600">{paymentHistory.length}</span>
                 )}
               </span>
             </Tab>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600">
-            {activeTab === 'fees' ? `${assignedFees.length} items` : `${paymentHistory.length} transactions`}
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-500 border border-orange-100">
+            {activeTab === 'fees'
+              ? `${assignedFees.length} fee${assignedFees.length !== 1 ? 's' : ''}`
+              : `${paymentHistory.length} txn${paymentHistory.length !== 1 ? 's' : ''}`}
           </span>
         </div>
 
         {/* ══ ACADEMIC FEES ══ */}
         {activeTab === 'fees' && (
           <>
-            <div className="grid grid-cols-12 gap-2 px-6 py-3 bg-gray-50 border-b border-gray-100">
-              {[
-                { h: 'Fee Head', s: 'col-span-3' }, { h: 'Total',   s: 'col-span-1' },
-                { h: 'Paid',     s: 'col-span-1' }, { h: 'Pending', s: 'col-span-2' },
-                { h: 'Fine',     s: 'col-span-1' }, { h: 'Status',  s: 'col-span-2' },
-                { h: 'Action',   s: 'col-span-2 text-right' },
-              ].map(({ h, s }) => (
-                <div key={h} className={`text-xs font-bold text-gray-500 uppercase tracking-wider ${s}`}>{h}</div>
-              ))}
-            </div>
-
             {assignedFees.length === 0 ? (
-              <div className="py-16 text-center">
-                <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <div className="py-20 text-center">
+                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-6 h-6 text-gray-300" />
+                </div>
                 <p className="text-gray-500 font-semibold">No fees assigned</p>
                 <p className="text-gray-400 text-sm mt-1">No fee records found for {academicYear}</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
-                {assignedFees.map((fee, idx) => {
-                  const isDisc    = !!fee.discontinued_on;
-                  const isPaid    = fee.status?.toLowerCase() === 'paid';
-                  const isPartial = fee.status?.toLowerCase() === 'partial';
-                  const isPending = fee.status?.toLowerCase() === 'pending';
+              <div className="divide-y divide-gray-100">
 
-                  const sb = isDisc    ? { label: `Disc. (${fmtDate(fee.discontinued_on)})`, bg: '#F3F4F6', color: '#6B7280' }
-                           : isPaid    ? { label: 'Paid',    bg: '#DCFCE7', color: '#15803D' }
-                           : isPartial ? { label: 'Partial', bg: '#FEF9C3', color: '#A16207' }
-                           : isPending ? { label: 'Pending', bg: '#FEE2E2', color: '#B91C1C' }
-                           :             { label: fee.status || '—', bg: '#F1F5F9', color: '#475569' };
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-3 px-6 py-3 bg-gray-50">
+                  <div className="col-span-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Fee Head</div>
+                  <div className="col-span-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Base Fee</div>
+                  <div className="col-span-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Paid</div>
+                  <div className="col-span-1 text-xs font-bold text-gray-400 uppercase tracking-wider">Fine</div>
+                  <div className="col-span-1 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</div>
+                  <div className="col-span-2 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</div>
+                </div>
+
+                {assignedFees.map((fee, idx) => {
+                  const isDisc  = !!fee.discontinued_on;
+                  const isPaid  = fee.status?.toLowerCase() === 'paid';
+                  const hasFine = parseFloat(fee.fine_amount) > 0;
+                  const base    = parseFloat(fee.base_amount || fee.total_amount || 0);
+                  const paid    = parseFloat(fee.paid_amount || 0);
+                  const pct     = base > 0 ? Math.min(100, Math.round((paid / base) * 100)) : 0;
+                  const barColor = pct === 100 ? '#22C55E' : pct > 50 ? '#F59E0B' : '#EF4444';
 
                   return (
                     <div key={fee.student_fee_id ?? idx}
-                      className={`grid grid-cols-12 gap-2 px-6 py-4 items-center hover:bg-gray-50/60 transition-colors ${isDisc ? 'opacity-60' : ''}`}>
-                      <div className="col-span-3 flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-50">
-                          <BookOpen className="w-3.5 h-3.5 text-orange-500" />
+                      className={`fee-row grid grid-cols-12 gap-3 px-6 py-5 items-center transition-colors ${isDisc ? 'opacity-50' : ''}`}>
+
+                      {/* Fee Head */}
+                      <div className="col-span-4 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: isDisc ? '#F3F4F6' : '#FFF3E0' }}>
+                          <BookOpen className={`w-4 h-4 ${isDisc ? 'text-gray-400' : 'text-orange-500'}`} />
                         </div>
-                        <div>
-                          <p className={`font-semibold text-sm ${isDisc ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{fee.fee_head_name}</p>
-                          {fee.fee_frequency && <p className="text-xs text-gray-400 capitalize">{fee.fee_frequency}</p>}
+                        <div className="min-w-0">
+                          <p className={`font-bold text-sm leading-tight ${isDisc ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                            {fee.fee_head_name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {fee.fee_frequency && (
+                              <span className="text-xs text-gray-400 capitalize">{fee.fee_frequency.replace(/_/g, ' ')}</span>
+                            )}
+                            {fee.assigned_on && (
+                              <span className="text-xs text-gray-300">· {fmtDate(fee.assigned_on)}</span>
+                            )}
+                          </div>
+                          {/* Progress bar */}
+                          {!isDisc && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <div className="w-20 bg-gray-100 rounded-full h-1.5">
+                                <div className="progress-bar h-1.5 rounded-full" style={{ width: `${pct}%`, background: barColor }} />
+                              </div>
+                              <span className="text-xs font-semibold" style={{ color: barColor }}>{pct}%</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="col-span-1"><span className="text-sm font-semibold text-gray-900">{fmt(fee.total_amount)}</span></div>
-                      <div className="col-span-1"><span className="text-sm font-semibold" style={{ color: '#15803D' }}>{fmt(fee.paid_amount)}</span></div>
+
+                      {/* ✅ Base Fee (original assigned amount) */}
                       <div className="col-span-2">
-                        <span className="text-sm font-semibold"
-                          style={{ color: parseFloat(fee.pending_amount) > 0 && !isDisc ? '#DC2626' : '#6B7280' }}>
-                          {isDisc ? '₹0' : fmt(fee.pending_amount)}
-                        </span>
+                        <p className="text-sm font-bold text-gray-900">{fmt(base)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Assigned</p>
                       </div>
+
+                      {/* Paid */}
+                      <div className="col-span-2">
+                        <p className="text-sm font-bold" style={{ color: '#15803D' }}>{fmt(fee.paid_amount)}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Collected</p>
+                      </div>
+
+                      {/* Fine */}
                       <div className="col-span-1">
-                        <span className="text-sm font-semibold" style={{ color: parseFloat(fee.fine_amount) > 0 ? '#DC2626' : '#6B7280' }}>
-                          {fmt(fee.fine_amount || 0)}
-                        </span>
+                        {hasFine ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-500 border border-red-100">
+                            +{fmt(fee.fine_amount)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-300">—</span>
+                        )}
                       </div>
-                      <div className="col-span-2">
-                        <span className="inline-block px-2.5 py-1 rounded text-xs font-bold" style={{ background: sb.bg, color: sb.color }}>{sb.label}</span>
+
+                      {/* Status */}
+                      <div className="col-span-1">
+                        <StatusBadge status={fee.status} discontinuedOn={fee.discontinued_on} />
                       </div>
+
+                      {/* Actions */}
                       <div className="col-span-2 flex items-center justify-end gap-2">
                         {!isDisc && !isPaid && (
                           <button onClick={() => handlePay(fee)}
-                            className="px-3 py-1.5 rounded-lg text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
-                            style={{ background: '#EA580C' }}>Pay Now</button>
+                            className="px-3 py-1.5 rounded-lg text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                            style={{ background: '#EA580C' }}>
+                            Pay Now
+                          </button>
                         )}
                         {!isDisc && !isPaid && (
                           <button onClick={() => openDiscontinue(fee)}
-                            className="px-3 py-1.5 rounded-lg text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
-                            style={{ background: '#DC2626' }}>Discontinue</button>
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 active:scale-95 transition-all border border-red-200 text-red-500">
+                            Stop
+                          </button>
+                        )}
+                        {isPaid && !isDisc && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600">
+                            <CheckCircle className="w-3.5 h-3.5" /> Cleared
+                          </span>
                         )}
                       </div>
                     </div>
@@ -344,44 +446,48 @@ const StudentFeeProfile = () => {
           <>
             {paymentHistory.length === 0 ? (
               <div className="py-20 text-center">
-                <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-6 h-6 text-gray-300" />
+                </div>
                 <p className="text-gray-500 font-semibold">No payment history</p>
                 <p className="text-gray-400 text-sm mt-1">No transactions recorded for {academicYear}</p>
               </div>
             ) : (
               <>
                 {/* History table header */}
-                <div className="grid grid-cols-12 gap-2 px-6 py-3 bg-gray-50 border-b border-gray-100">
+                <div className="grid grid-cols-12 gap-3 px-6 py-3 bg-gray-50">
                   {[
-                    { h: 'Fee Head',    s: 'col-span-4' },
-                    { h: 'Type',        s: 'col-span-2' },
-                    { h: 'Date',        s: 'col-span-2' },
-                    { h: 'Mode',        s: 'col-span-2' },
-                    { h: 'Amount',      s: 'col-span-2 text-right' },
+                    { h: 'Fee Head', s: 'col-span-4' },
+                    { h: 'Type',     s: 'col-span-2' },
+                    { h: 'Date',     s: 'col-span-2' },
+                    { h: 'Mode',     s: 'col-span-2' },
+                    { h: 'Amount',   s: 'col-span-2 text-right' },
                   ].map(({ h, s }) => (
-                    <div key={h} className={`text-xs font-bold text-gray-500 uppercase tracking-wider ${s}`}>{h}</div>
+                    <div key={h} className={`text-xs font-bold text-gray-400 uppercase tracking-wider ${s}`}>{h}</div>
                   ))}
                 </div>
 
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-100">
                   {paymentHistory.map((ph, i) => {
                     const isTransport = !!ph.route_name;
                     const ModeIcon    = PAYMENT_MODE_ICONS[ph.payment_mode?.toLowerCase()] || CreditCard;
+                    const rowTotal    = parseFloat(ph.amount || 0) + parseFloat(ph.fine_amount || 0);
+                    const hasFine     = parseFloat(ph.fine_amount) > 0;
 
                     return (
                       <div key={ph.payment_id ?? i}
-                        className="grid grid-cols-12 gap-2 px-6 py-4 items-center hover:bg-gray-50/60 transition-colors">
+                        className="fee-row grid grid-cols-12 gap-3 px-6 py-4 items-center transition-colors">
 
-                        {/* Fee Head + route info */}
-                        <div className="col-span-4 flex items-start gap-2">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${isTransport ? '' : 'bg-orange-50'}`}
-                            style={isTransport ? { background: '#EFF6FF' } : {}}>
+                        {/* Fee Head */}
+                        <div className="col-span-4 flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                            style={{ background: isTransport ? '#EFF6FF' : '#FFF3E0' }}>
                             {isTransport
-                              ? <Bus className="w-3.5 h-3.5 text-blue-500" />
-                              : <BookOpen className="w-3.5 h-3.5 text-orange-500" />}
+                              ? <Bus className="w-4 h-4 text-blue-500" />
+                              : <BookOpen className="w-4 h-4 text-orange-500" />}
                           </div>
                           <div>
-                            <p className="font-semibold text-sm text-gray-900 leading-tight">{ph.fee_head_name || '—'}</p>
+                            <p className="font-bold text-sm text-gray-900 leading-tight">{ph.fee_head_name || '—'}</p>
                             {isTransport && (
                               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                 {ph.route_name && (
@@ -396,22 +502,25 @@ const StudentFeeProfile = () => {
                                 )}
                               </div>
                             )}
+                            {ph.transaction_ref && (
+                              <p className="text-xs text-gray-400 mt-0.5 font-mono">TXN: {ph.transaction_ref}</p>
+                            )}
                           </div>
                         </div>
 
                         {/* Type */}
                         <div className="col-span-2">
-                          <span className="inline-block px-2.5 py-1 rounded text-xs font-bold"
+                          <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold"
                             style={isTransport
                               ? { background: '#EFF6FF', color: '#1D4ED8' }
                               : { background: '#FFF3E0', color: '#EA580C' }}>
-                            {isTransport ? 'Transport' : 'Fee Installment'}
+                            {isTransport ? 'Transport' : 'Fee'}
                           </span>
                         </div>
 
                         {/* Date */}
                         <div className="col-span-2">
-                          <p className="text-sm text-gray-800 font-medium">{fmtDate(ph.paid_on)}</p>
+                          <p className="text-sm text-gray-800 font-semibold">{fmtDate(ph.paid_on)}</p>
                           <p className="text-xs text-gray-400 mt-0.5">
                             {ph.paid_on
                               ? new Date(ph.paid_on).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
@@ -427,10 +536,7 @@ const StudentFeeProfile = () => {
                               {ph.payment_mode?.replace(/_/g, ' ') || '—'}
                             </span>
                           </div>
-                          {ph.transaction_ref && (
-                            <p className="text-xs text-gray-400 mt-0.5 font-mono truncate">TXN: {ph.transaction_ref}</p>
-                          )}
-                          <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-xs font-bold"
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-bold"
                             style={ph.status === 'success'
                               ? { background: '#DCFCE7', color: '#15803D' }
                               : { background: '#FEF9C3', color: '#A16207' }}>
@@ -438,11 +544,13 @@ const StudentFeeProfile = () => {
                           </span>
                         </div>
 
-                        {/* Amount */}
+                        {/* ✅ Amount = fee + fine total */}
                         <div className="col-span-2 text-right">
-                          <p className="font-bold text-green-600 text-base">{fmt(ph.amount)}</p>
-                          {parseFloat(ph.fine_amount) > 0 && (
-                            <p className="text-xs text-red-500 mt-0.5">+{fmt(ph.fine_amount)} fine</p>
+                          <p className="font-extrabold text-green-600 text-base">{fmt(rowTotal)}</p>
+                          {hasFine && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {fmt(ph.amount)} + <span className="text-red-400">{fmt(ph.fine_amount)} fine</span>
+                            </p>
                           )}
                         </div>
                       </div>
@@ -450,12 +558,15 @@ const StudentFeeProfile = () => {
                   })}
                 </div>
 
-                {/* Footer total */}
+                {/* ✅ Footer total = fee + fine */}
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
                   <span className="text-sm text-gray-500 font-medium">{paymentHistory.length} transaction(s)</span>
                   <div className="text-right">
                     <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Total Collected</p>
-                    <p className="text-xl font-bold" style={{ color: '#15803D' }}>{fmt(totalHistoryAmt)}</p>
+                    <p className="text-xl font-extrabold" style={{ color: '#15803D' }}>{fmt(totalHistoryAmt)}</p>
+                    {cy.fine > 0 && (
+                      <p className="text-xs text-gray-400 mt-0.5">Incl. {fmt(cy.fine)} fine</p>
+                    )}
                   </div>
                 </div>
               </>
@@ -466,14 +577,14 @@ const StudentFeeProfile = () => {
 
       {/* ── Previous Year Dues ── */}
       {(summary.previous_pending > 0 || summary.previous_fine > 0) && (
-        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
           <div>
-            <p className="font-semibold text-amber-800 text-sm">Previous Year Dues</p>
+            <p className="font-bold text-amber-800 text-sm">Previous Year Dues</p>
             <p className="text-xs text-amber-600 mt-0.5">Outstanding from earlier academic sessions</p>
           </div>
           <div className="text-right">
             <p className="font-bold text-amber-800 text-lg">{fmt(summary.previous_pending)}</p>
-            {summary.previous_fine > 0 && <p className="text-xs text-red-600">+{fmt(summary.previous_fine)} fine</p>}
+            {summary.previous_fine > 0 && <p className="text-xs text-red-500">+{fmt(summary.previous_fine)} fine</p>}
           </div>
         </div>
       )}
