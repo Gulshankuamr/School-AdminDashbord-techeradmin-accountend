@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Save, BarChart2, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { markExameService } from '../../services/examService/markExameService'
+import  markExameService  from '../../services/examService/markExameService'
 
 const AssignMarks = () => {
   const navigate = useNavigate()

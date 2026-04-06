@@ -1,5 +1,8 @@
 // src/App.jsx
 
+
+import { Toaster } from "react-hot-toast"
+
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { useState } from 'react'
 import { PERMISSIONS as P } from './config/permissions.js'
@@ -120,6 +123,19 @@ function AdminLayout() {
 function App() {
   return (
     <BrowserRouter>
+
+     <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            fontSize: "14px",
+            borderRadius: "8px"
+          }
+        }}
+      />
+
+
       <Routes>
 
         <Route path="/login" element={<LoginPage />} />

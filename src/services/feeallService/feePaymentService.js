@@ -21,7 +21,27 @@ const feePaymentService = {
   },
 
   // ===============================
-  // 2️⃣ GET STUDENT FEES
+  // 2️⃣ GET ACADEMIC YEARS FROM API
+  // ===============================
+  getAcademicYears: async () => {
+    const token = getAuthToken();
+    if (!token) throw new Error('Token missing');
+
+    const response = await fetch(
+      `${API_BASE_URL}/schoolAdmin/getAcademicYears`,
+      { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } }
+    );
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    if (!data || data.success !== true) throw new Error(data?.message || 'Failed to fetch academic years');
+
+    // Returns array of { academic_year_id, year_name, is_current, ... }
+    return data.data || [];
+  },
+
+  // ===============================
+  // 3️⃣ GET STUDENT FEES
   // ===============================
   getStudentFees: async (studentId, academicYear = '2026-27') => {
     const token = getAuthToken();
@@ -41,7 +61,7 @@ const feePaymentService = {
               student_info: null,
               current_academic_year: academicYear,
               fee_breakdown: [],
-              transport_fee_breakdown: [],   // ✅ transport added
+              transport_fee_breakdown: [],
               payment_history: [],
               summary: {
                 current_year: { total: 0, paid: 0, pending: 0, fine: 0 },
@@ -66,8 +86,7 @@ const feePaymentService = {
   },
 
   // ===============================
-  // 3️⃣ COLLECT FEE PAYMENT (Offline/Manual)
-  //    ✅ Now supports transport_installment_ids
+  // 4️⃣ COLLECT FEE PAYMENT (Offline/Manual)
   // ===============================
   collectFeePayment: async (paymentData) => {
     const token = getAuthToken();
@@ -76,7 +95,7 @@ const feePaymentService = {
     const requestData = {
       student_id:                paymentData.student_id,
       installment_ids:           paymentData.installment_ids           || [],
-      transport_installment_ids: paymentData.transport_installment_ids || [],  // ✅ NEW
+      transport_installment_ids: paymentData.transport_installment_ids || [],
       payment_mode:              paymentData.payment_mode,
       transaction_ref:           paymentData.transaction_ref || null,
       payment_gateway:           'offline',
@@ -108,7 +127,7 @@ const feePaymentService = {
   },
 
   // ===============================
-  // 4️⃣ GET ALL CLASSES
+  // 5️⃣ GET ALL CLASSES
   // ===============================
   getAllClasses: async () => {
     const token = getAuthToken();
@@ -126,7 +145,7 @@ const feePaymentService = {
   },
 
   // ===============================
-  // 5️⃣ GET ALL SECTIONS BY CLASS ID
+  // 6️⃣ GET ALL SECTIONS BY CLASS ID
   // ===============================
   getAllSections: async (classId) => {
     const token = getAuthToken();
@@ -146,7 +165,7 @@ const feePaymentService = {
   },
 
   // ===============================
-  // 6️⃣ DISCONTINUE FEE
+  // 7️⃣ DISCONTINUE FEE
   // ===============================
   discontinueFee: async (payload) => {
     const token = getAuthToken();
@@ -175,7 +194,7 @@ const feePaymentService = {
   },
 
   // ===============================
-  // 7️⃣ GET SCHOOL ADMIN PROFILE
+  // 8️⃣ GET SCHOOL ADMIN PROFILE
   // ===============================
   getSchoolProfile: async () => {
     const token = getAuthToken();

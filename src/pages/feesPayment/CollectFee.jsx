@@ -1,31 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Search, X, Users, Download
-} from 'lucide-react';
+import { Search, X, Users } from 'lucide-react';
 import feePaymentService from '../../services/feeallService/feePaymentService';
-
-// ✅ Static academic years 2026-27 to 2032-33
-const ACADEMIC_YEARS = Array.from({ length: 7 }, (_, i) => {
-  const s = 2026 + i;
-  const e = (s + 1).toString().slice(-2);
-  return `${s}-${e}`;
-});
 
 const CollectFee = () => {
   const navigate = useNavigate();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [allStudents, setAllStudents] = useState([]);
-  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [isLoading,         setIsLoading]         = useState(true);
+  const [allStudents,       setAllStudents]        = useState([]);
+  const [filteredStudents,  setFilteredStudents]   = useState([]);
+
+  // ✅ Academic years from API
+  const [academicYears,     setAcademicYears]      = useState([]);
+  const [ldAcYears,         setLdAcYears]          = useState(false);
+
   const [filters, setFilters] = useState({
-    academicYear: '2026-27',
-    className: '',
-    sectionName: '',
-    searchText: '',
+    academicYear: '',   // set after API fetch (current year auto-selected)
+    className:    '',
+    sectionName:  '',
+    searchText:   '',
   });
 
+  // ── Fetch academic years on mount ─────────────────────────────────────────
+  useEffect(() => {
+    setLdAcYears(true);
+    feePaymentService.getAcademicYears()
+      .then(data => {
+        setAcademicYears(data);
+        // Auto-select the year where is_current === 1
+        const current = data.find(y => y.is_current === 1);
+        const defaultYear = current?.year_name || data[0]?.year_name || '';
+        setFilters(prev => ({ ...prev, academicYear: defaultYear }));
+      })
+      .catch(e => console.error('Failed to load academic years:', e.message))
+      .finally(() => setLdAcYears(false));
+  }, []);
+
+  // ── Fetch all students on mount ───────────────────────────────────────────
   useEffect(() => { fetchAllStudents(); }, []);
+
+  // ── Re-apply filters whenever filters or students change ─────────────────
   useEffect(() => { applyFilters(); }, [filters, allStudents]);
 
   const fetchAllStudents = async () => {
@@ -45,7 +59,7 @@ const CollectFee = () => {
 
   const applyFilters = () => {
     let filtered = [...allStudents];
-    if (filters.className) filtered = filtered.filter(s => s.class_name === filters.className);
+    if (filters.className)   filtered = filtered.filter(s => s.class_name   === filters.className);
     if (filters.sectionName) filtered = filtered.filter(s => s.section_name === filters.sectionName);
     if (filters.searchText) {
       const q = filters.searchText.toLowerCase();
@@ -56,9 +70,7 @@ const CollectFee = () => {
     setFilteredStudents(filtered);
   };
 
-  const getUniqueClasses = () =>
-    [...new Set(allStudents.map(s => s.class_name).filter(Boolean))].sort();
-
+  const getUniqueClasses  = () => [...new Set(allStudents.map(s => s.class_name).filter(Boolean))].sort();
   const getUniqueSections = () => {
     const src = filters.className
       ? allStudents.filter(s => s.class_name === filters.className)
@@ -67,7 +79,14 @@ const CollectFee = () => {
   };
 
   const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
-  const handleReset = () => setFilters({ academicYear: '2026-27', className: '', sectionName: '', searchText: '' });
+
+  const handleReset = () => {
+    // On reset, keep the current academic year selected
+    const current = academicYears.find(y => y.is_current === 1);
+    const defaultYear = current?.year_name || academicYears[0]?.year_name || '';
+    setFilters({ academicYear: defaultYear, className: '', sectionName: '', searchText: '' });
+  };
+
   const handleCollect = (student) => navigate(`/admin/fees-payment/student/${student.student_id}`);
 
   const avatarColors = [
@@ -102,18 +121,37 @@ const CollectFee = () => {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
 
-          {/* ✅ Academic Year - 2026-27 to 2032-33 */}
+          {/* ✅ Academic Year — dynamic from API, auto-selects current year */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Academic Year</label>
-            <select
-              value={filters.academicYear}
-              onChange={(e) => handleFilterChange('academicYear', e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-gray-900 text-sm font-medium focus:outline-none focus:ring-2 focus:border-orange-500 bg-white"
-            >
-              {ACADEMIC_YEARS.map(yr => (
-                <option key={yr} value={yr}>{yr}</option>
-              ))}
-            </select>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              Academic Year
+            </label>
+            <div className="relative">
+              <select
+                value={filters.academicYear}
+                onChange={(e) => handleFilterChange('academicYear', e.target.value)}
+                disabled={ldAcYears}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-gray-900 text-sm font-medium focus:outline-none focus:ring-2 focus:border-orange-500 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {ldAcYears ? (
+                  <option value="">Loading…</option>
+                ) : academicYears.length === 0 ? (
+                  <option value="">No years found</option>
+                ) : (
+                  academicYears.map(y => (
+                    <option key={y.academic_year_id} value={y.year_name}>
+                      {y.year_name}
+                    </option>
+                  ))
+                )}
+              </select>
+              {/* Loading spinner inside select */}
+              {ldAcYears && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <div className="w-3.5 h-3.5 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Class */}
@@ -156,8 +194,10 @@ const CollectFee = () => {
                 className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-gray-300 text-gray-900 text-sm font-medium focus:outline-none focus:ring-2 focus:border-orange-500 bg-white placeholder-gray-400"
               />
               {filters.searchText && (
-                <button onClick={() => handleFilterChange('searchText', '')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button
+                  onClick={() => handleFilterChange('searchText', '')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
                   <X className="w-4 h-4" />
                 </button>
               )}
@@ -168,9 +208,14 @@ const CollectFee = () => {
         {(filters.className || filters.sectionName || filters.searchText) && (
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
             <span className="text-sm text-gray-500">
-              Showing <span className="font-semibold text-gray-900">{filteredStudents.length}</span> of <span className="font-semibold text-gray-900">{allStudents.length}</span> students
+              Showing <span className="font-semibold text-gray-900">{filteredStudents.length}</span> of{' '}
+              <span className="font-semibold text-gray-900">{allStudents.length}</span> students
             </span>
-            <button onClick={handleReset} className="text-sm font-semibold flex items-center gap-1.5 hover:opacity-80 transition-opacity" style={{ color: '#EA580C' }}>
+            <button
+              onClick={handleReset}
+              className="text-sm font-semibold flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+              style={{ color: '#EA580C' }}
+            >
               <X className="w-3.5 h-3.5" /> Reset Filters
             </button>
           </div>
@@ -182,7 +227,6 @@ const CollectFee = () => {
 
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900 text-base">Recent Fee Transactions</h2>
-          
         </div>
 
         <div className="grid grid-cols-12 gap-3 px-6 py-3 bg-gray-50 border-b border-gray-100">

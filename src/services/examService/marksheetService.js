@@ -37,7 +37,35 @@ const marksheetService = {
   },
 
   // ===============================
-  // 2️⃣ GET ALL CLASSES
+  // 2️⃣ GET ACADEMIC YEARS
+  // ===============================
+  getAcademicYears: async () => {
+    const token = getAuthToken();
+    if (!token) throw new Error("Token missing");
+
+    const res = await fetch(`${API_BASE_URL}/schoolAdmin/getAcademicYears`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const contentType = res.headers.get("content-type");
+    if (!contentType?.includes("application/json")) {
+      throw new Error("API returned non-JSON response");
+    }
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || "Failed to load academic years");
+    }
+
+    // Returns array of { academic_year_id, year_name, is_current, ... }
+    return data.data || [];
+  },
+
+  // ===============================
+  // 3️⃣ GET ALL CLASSES
   // ===============================
   getAllClasses: async () => {
     const token = getAuthToken();
@@ -64,7 +92,7 @@ const marksheetService = {
   },
 
   // ===============================
-  // 3️⃣ GET SECTIONS BY CLASS
+  // 4️⃣ GET SECTIONS BY CLASS
   // ===============================
   getSectionsByClass: async (classId) => {
     const token = getAuthToken();
@@ -94,7 +122,7 @@ const marksheetService = {
   },
 
   // ===============================
-  // 4️⃣ GET STUDENTS BY CLASS & SECTION
+  // 5️⃣ GET STUDENTS BY CLASS & SECTION
   // ===============================
   getStudentsByClassAndSection: async (classId, sectionId) => {
     const token = getAuthToken();
@@ -124,7 +152,7 @@ const marksheetService = {
   },
 
   // ===============================
-  // 5️⃣ GENERATE MARKSHEET
+  // 6️⃣ GENERATE MARKSHEET
   // ===============================
   generateMarksheet: async (studentId, academicYear) => {
     const token = getAuthToken();

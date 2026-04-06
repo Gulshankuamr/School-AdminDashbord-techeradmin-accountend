@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Search, Printer, RefreshCw, Eye, Filter, X, Award, BookOpen } from 'lucide-react'
-import { markExameService } from '../../services/examService/markExameService'
+import  markExameService  from '../../services/examService/markExameService'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARKSHEET MODAL — improved, all fields properly shown

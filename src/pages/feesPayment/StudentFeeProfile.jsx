@@ -18,10 +18,10 @@ const fmtDate = (d) => {
   catch { return String(d); }
 };
 
-const ACADEMIC_YEARS = Array.from({ length: 7 }, (_, i) => {
-  const s = 2026 + i;
-  return `${s}-${(s + 1).toString().slice(-2)}`;
-});
+// const ACADEMIC_YEARS = Array.from({ length: 7 }, (_, i) => {
+//   const s = 2026 + i;
+//   return `${s}-${(s + 1).toString().slice(-2)}`;
+// });
 
 const DISCONTINUE_REASONS = [
   'Student left school', 'Service/facility stopped', 'Scholarship granted',
@@ -184,11 +184,11 @@ const StudentFeeProfile = () => {
           <h1 className="text-2xl font-bold text-gray-900">Student Fee Profile</h1>
           <p className="text-gray-500 text-sm mt-0.5">Manage and view detailed fee information</p>
         </div>
-        <select value={academicYear} onChange={e => setAcademicYear(e.target.value)}
+        {/* <select value={academicYear} onChange={e => setAcademicYear(e.target.value)}
           className="px-3 py-2 rounded-lg border border-gray-300 text-gray-900 text-sm font-semibold bg-white focus:outline-none"
           style={{ minWidth: 180 }}>
           {ACADEMIC_YEARS.map(yr => <option key={yr} value={yr}>Academic Year {yr}</option>)}
-        </select>
+        </select> */}
       </div>
 
       {/* ── Student Info Card ── */}
