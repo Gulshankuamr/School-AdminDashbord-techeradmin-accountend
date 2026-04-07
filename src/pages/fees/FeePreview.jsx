@@ -254,7 +254,7 @@ const FeeList = () => {
         {!authError && (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-600">Total Structures</h3>
@@ -287,7 +287,7 @@ const FeeList = () => {
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(summary.estimatedRevenue)}</p>
                 <p className="text-gray-500 text-sm mt-1">Total expected</p>
               </div>
-            </div>
+            </div> */}
 
             {/* Filters Card */}
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">

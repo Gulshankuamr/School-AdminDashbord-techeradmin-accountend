@@ -144,7 +144,7 @@ function LoginPage() {
               <span className="text-emerald-500">System</span>
             </h1>
             <p className="text-slate-500 text-base leading-relaxed max-w-md mb-5">
-              Manage students, teachers, attendance, fees, and reports —{' '}
+              Manage students, teachers, accountant, attendance, fees, and reports —{' '}
               <span className="font-bold text-slate-700">all in one powerful platform.</span>
             </p>
             <p className="text-xs text-slate-400 font-bold italic tracking-wide mb-2">

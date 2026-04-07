@@ -547,8 +547,6 @@ const FineRule = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm text-black"
               >
                 <option value="per_day">Per Day</option>
-                <option value="flat_monthly">Fixed Amount</option>
-                <option value="percentage">Percentage</option>
               </select>
             </div>
 

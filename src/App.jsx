@@ -390,78 +390,84 @@ function App() {
           }/>
 
           {/* 📝 Exams */}
-          <Route path="exams" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <ExamList />
-            </ProtectedRoute>
-          }/>
-          {/* <Route path="exams/add" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <CreateExam />
-            </ProtectedRoute>
-          }/> */}
+       {/* 📝 Exams */}
+<Route path="exams" element={
+  <ProtectedRoute permission={[P.VIEW_EXAM, P.MANAGE_EXAM_MARKS]}>
+    <ExamList />
+  </ProtectedRoute>
+}/>
 
-       <Route path="exams/add" element={
-  <ProtectedRoute permission={P.CREATE_EXAM}>
+<Route path="exams/add" element={
+  <ProtectedRoute permission={[P.CREATE_EXAM, P.MANAGE_EXAM_MARKS]}>
     <CreateExam />
   </ProtectedRoute>
 }/>
 
-          <Route path="exams/timetable" element={
-            <ProtectedRoute permission={P.VIEW_TIMETABLE}>
-              <ViewExamTimetable />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/timetable/create" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <CreateExamTimetable />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/timetable/edit/:id" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <CreateExamTimetable />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/timetable/preview/:id" element={
-            <ProtectedRoute permission={P.VIEW_TIMETABLE}>
-              <TimetablePreview />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/assign-marks" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <AssignMarks />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/marks-list" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <MarksList />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/print-marksheet" element={
-            <ProtectedRoute permission={P.GENERATE_MARKSHEET}>
-              <PrintMarksheet />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/admit-card" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <GenerateAdmitCard />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/marksheet-generator" element={
-            <ProtectedRoute permission={P.GENERATE_MARKSHEET}>
-              <MarksheetGenerator />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/co-scholastic" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <CreateCoScholasticGrades />
-            </ProtectedRoute>
-          }/>
-          <Route path="exams/co-scholastic/list" element={
-            <ProtectedRoute permission={P.MANAGE_EXAM_MARKS}>
-              <CoScholasticGradesList />
-            </ProtectedRoute>
-          }/>
+<Route path="exams/timetable" element={
+  <ProtectedRoute permission={[P.VIEW_EXAM_TIMETABLE, P.MANAGE_EXAM_MARKS]}>
+    <ViewExamTimetable />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/timetable/create" element={
+  <ProtectedRoute permission={[P.CREATE_EXAM_TIMETABLE, P.MANAGE_EXAM_MARKS]}>
+    <CreateExamTimetable />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/timetable/edit/:id" element={
+  <ProtectedRoute permission={[P.EDIT_EXAM, P.MANAGE_EXAM_MARKS]}>
+    <CreateExamTimetable />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/timetable/preview/:id" element={
+  <ProtectedRoute permission={[P.VIEW_EXAM_TIMETABLE, P.MANAGE_EXAM_MARKS]}>
+    <TimetablePreview />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/assign-marks" element={
+  <ProtectedRoute permission={[P.ASSIGN_MARKS, P.MANAGE_EXAM_MARKS]}>
+    <AssignMarks />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/marks-list" element={
+  <ProtectedRoute permission={[P.VIEW_MARKS, P.MANAGE_EXAM_MARKS]}>
+    <MarksList />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/print-marksheet" element={
+  <ProtectedRoute permission={[P.GENERATE_MARKSHEET, P.MANAGE_EXAM_MARKS]}>
+    <PrintMarksheet />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/marksheet-generator" element={
+  <ProtectedRoute permission={[P.GENERATE_MARKSHEET, P.MANAGE_EXAM_MARKS]}>
+    <MarksheetGenerator />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/admit-card" element={
+  <ProtectedRoute permission={[P.GENERATE_ADMIT_CARD, P.MANAGE_EXAM_MARKS]}>
+    <GenerateAdmitCard />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/co-scholastic" element={
+  <ProtectedRoute permission={[P.MANAGE_CO_SCHOLASTIC, P.MANAGE_EXAM_MARKS]}>
+    <CreateCoScholasticGrades />
+  </ProtectedRoute>
+}/>
+
+<Route path="exams/co-scholastic/list" element={
+  <ProtectedRoute permission={[P.MANAGE_CO_SCHOLASTIC, P.MANAGE_EXAM_MARKS]}>
+    <CoScholasticGradesList />
+  </ProtectedRoute>
+}/>
 
           {/* 📖 Homework */}
           <Route path="homework" element={

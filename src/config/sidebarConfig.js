@@ -101,7 +101,120 @@ export const sidebarMenuItems = [
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // 📝 EXAMS MANAGEMENT
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  {
+  // {
+  //   id:      'group-exams',
+  //   label:   'Exams Management',
+  //   icon:    FileText,
+  //   isGroup: true,
+  //   color:   'violet',
+
+  //   items: [
+  //     {
+  //       id:          'exams',
+  //       label:       'Exams',
+  //       icon:        FileText,
+  //       hasDropdown: true,
+  //       permission:  [P.MANAGE_EXAM_MARKS, P.GENERATE_MARKSHEET , P.CREATE_EXAM,],
+  //       subItems: [
+  //         { id: 'create-exam',           label: 'Create Exam',          path: '/admin/exams/add',                permission: P.CREATE_EXAM, },
+  //         { id: 'exam-timetable-create', label: 'Exam Timetable',       path: '/admin/exams/timetable/create',    permission: P.MANAGE_EXAM_MARKS  },
+  //         { id: 'assign-marks',          label: 'Create Marks',         path: '/admin/exams/assign-marks',        permission: P.MANAGE_EXAM_MARKS  },
+  //         { id: 'marks-list',            label: 'Marks List',           path: '/admin/exams/marks-list',          permission: P.MANAGE_EXAM_MARKS  },
+  //         { id: 'co-scholastic-grades',  label: 'Co-Scholastic Grades', path: '/admin/exams/co-scholastic',       permission: P.MANAGE_EXAM_MARKS  },
+  //         { id: 'marksheet-generator',   label: 'Generate Marksheet',   path: '/admin/exams/marksheet-generator', permission: P.GENERATE_MARKSHEET },
+  //         { id: 'generate-admit-card',   label: 'Admit & ID Cards',     path: '/admin/exams/admit-card',          permission: P.MANAGE_EXAM_MARKS  },
+  //       ],
+  //     },
+  //   ],
+  // },
+
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📝 EXAMS MANAGEMENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// {
+//   id:      'group-exams',
+//   label:   'Exams Management',
+//   icon:    FileText,
+//   isGroup: true,
+//   color:   'violet',
+
+//   items: [
+//     {
+//       id:          'exams',
+//       label:       'Exams',
+//       icon:        FileText,
+//       hasDropdown: true,
+//       // Group visible hoga agar inme se koi ek permission ho
+//       permission: [
+//         P.CREATE_EXAM, P.VIEW_EXAM, P.EDIT_EXAM,
+//         P.CREATE_EXAM_TIMETABLE, P.VIEW_EXAM_TIMETABLE,
+//         P.ASSIGN_MARKS, P.VIEW_MARKS,
+//         P.MANAGE_CO_SCHOLASTIC, P.GENERATE_MARKSHEET,
+//         P.GENERATE_ADMIT_CARD, P.MANAGE_EXAM_MARKS,
+//       ],
+//       subItems: [
+//         {
+//           id:         'create-exam',
+//           label:      'Create Exam',
+//           path:       '/admin/exams/add',
+//           permission: P.CREATE_EXAM,
+//         },
+//         {
+//           id:         'view-exams',
+//           label:      'View Exams',
+//           path:       '/admin/exams',          // ← yahi path tha jo kaam nahi kar raha tha
+//           permission: P.VIEW_EXAM,
+//         },
+//         {
+//           id:         'exam-timetable-create',
+//           label:      'Create Exam Timetable',
+//           path:       '/admin/exams/timetable/create',
+//           permission: P.CREATE_EXAM_TIMETABLE,
+//         },
+//         {
+//           id:         'exam-timetable-view',
+//           label:      'View Exam Timetable',
+//           path:       '/admin/exams/timetable',
+//           permission: P.VIEW_EXAM_TIMETABLE,
+//         },
+//         {
+//           id:         'assign-marks',
+//           label:      'Create Marks',
+//           path:       '/admin/exams/assign-marks',
+//           permission: P.ASSIGN_MARKS,
+//         },
+//         {
+//           id:         'marks-list',
+//           label:      'Marks List',
+//           path:       '/admin/exams/marks-list',
+//           permission: P.VIEW_MARKS,
+//         },
+//         {
+//           id:         'co-scholastic-grades',
+//           label:      'Co-Scholastic Grades',
+//           path:       '/admin/exams/co-scholastic',
+//           permission: P.MANAGE_CO_SCHOLASTIC,
+//         },
+//         {
+//           id:         'marksheet-generator',
+//           label:      'Generate Marksheet',
+//           path:       '/admin/exams/marksheet-generator',
+//           permission: P.GENERATE_MARKSHEET,
+//         },
+//         {
+//           id:         'generate-admit-card',
+//           label:      'Admit & ID Cards',
+//           path:       '/admin/exams/admit-card',
+//           permission: P.GENERATE_ADMIT_CARD,
+//         },
+//       ],
+//     },
+//   ],
+// },
+
+
+ {
     id:      'group-exams',
     label:   'Exams Management',
     icon:    FileText,
@@ -114,15 +227,75 @@ export const sidebarMenuItems = [
         label:       'Exams',
         icon:        FileText,
         hasDropdown: true,
-        permission:  [P.MANAGE_EXAM_MARKS, P.GENERATE_MARKSHEET , P.CREATE_EXAM,],
+        // Group tab visible hoga jab inme se KOI EK bhi permission ho
+        permission: [
+          P.CREATE_EXAM,
+          P.VIEW_EXAM,
+          P.EDIT_EXAM,
+          P.CREATE_EXAM_TIMETABLE,
+          P.VIEW_EXAM_TIMETABLE,
+          P.ASSIGN_MARKS,
+          P.VIEW_MARKS,
+          P.MANAGE_CO_SCHOLASTIC,
+          P.GENERATE_MARKSHEET,
+          P.GENERATE_ADMIT_CARD,
+          P.MANAGE_EXAM_MARKS,
+        ],
         subItems: [
-          { id: 'create-exam',           label: 'Create Exam',          path: '/admin/exams/add',                permission: P.CREATE_EXAM, },
-          { id: 'exam-timetable-create', label: 'Exam Timetable',       path: '/admin/exams/timetable/create',    permission: P.MANAGE_EXAM_MARKS  },
-          { id: 'assign-marks',          label: 'Create Marks',         path: '/admin/exams/assign-marks',        permission: P.MANAGE_EXAM_MARKS  },
-          { id: 'marks-list',            label: 'Marks List',           path: '/admin/exams/marks-list',          permission: P.MANAGE_EXAM_MARKS  },
-          { id: 'co-scholastic-grades',  label: 'Co-Scholastic Grades', path: '/admin/exams/co-scholastic',       permission: P.MANAGE_EXAM_MARKS  },
-          { id: 'marksheet-generator',   label: 'Generate Marksheet',   path: '/admin/exams/marksheet-generator', permission: P.GENERATE_MARKSHEET },
-          { id: 'generate-admit-card',   label: 'Admit & ID Cards',     path: '/admin/exams/admit-card',          permission: P.MANAGE_EXAM_MARKS  },
+          {
+            id:         'create-exam',
+            label:      'Create Exam',
+            path:       '/admin/exams/add',
+            permission: P.CREATE_EXAM,
+          },
+          {
+            id:         'view-exams',
+            label:      'View Exams',
+            path:       '/admin/exams',
+            permission: P.VIEW_EXAM,
+          },
+          {
+            id:         'exam-timetable-create',
+            label:      'Create Exam Timetable',
+            path:       '/admin/exams/timetable/create',
+            permission: P.CREATE_EXAM_TIMETABLE,
+          },
+          {
+            id:         'exam-timetable-view',
+            label:      'View Exam Timetable',
+            path:       '/admin/exams/timetable',
+            permission: P.VIEW_EXAM_TIMETABLE,
+          },
+          {
+            id:         'assign-marks',
+            label:      'Create Marks',
+            path:       '/admin/exams/assign-marks',
+            permission: P.ASSIGN_MARKS,
+          },
+          {
+            id:         'marks-list',
+            label:      'Marks List',
+            path:       '/admin/exams/marks-list',
+            permission: P.VIEW_MARKS,
+          },
+          {
+            id:         'co-scholastic-grades',
+            label:      'Co-Scholastic Grades',
+            path:       '/admin/exams/co-scholastic',
+            permission: P.MANAGE_CO_SCHOLASTIC,
+          },
+          {
+            id:         'marksheet-generator',
+            label:      'Generate Marksheet',
+            path:       '/admin/exams/marksheet-generator',
+            permission: P.GENERATE_MARKSHEET,
+          },
+          {
+            id:         'generate-admit-card',
+            label:      'Admit & ID Cards',
+            path:       '/admin/exams/admit-card',
+            permission: P.GENERATE_ADMIT_CARD,
+          },
         ],
       },
     ],
