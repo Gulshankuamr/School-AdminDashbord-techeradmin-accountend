@@ -371,7 +371,7 @@ const MarkTeacherAttendance = () => {
           ))}
         </div>
         <p className="text-sm text-gray-600 mt-3">
-          ✅ Status codes exactly match API requirements: P (Present), A (Absent), L (Late), H (Half Day), OL (On Leave)
+          {/* ✅ Status codes exactly match API requirements: P (Present), A (Absent), L (Late), H (Half Day), OL (On Leave) */}
         </p>
       </div>
 

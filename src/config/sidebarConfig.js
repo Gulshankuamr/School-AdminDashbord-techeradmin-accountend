@@ -268,13 +268,13 @@ export const sidebarMenuItems = [
           },
           {
             id:         'assign-marks',
-            label:      'Create Marks',
+            label:      'Scholastic Marks',
             path:       '/admin/exams/assign-marks',
             permission: P.ASSIGN_MARKS,
           },
           {
             id:         'marks-list',
-            label:      'Marks List',
+            label:      'Scholastic Marks List',
             path:       '/admin/exams/marks-list',
             permission: P.VIEW_MARKS,
           },
