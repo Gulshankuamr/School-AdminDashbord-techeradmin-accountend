@@ -6,6 +6,9 @@ import {
 } from 'lucide-react'
 import { studentService } from '../../services/studentService/studentService'
 import StudentDetailsModal from './StudentDetailsModal'
+import PermissionButton from '../../components/common/PermissionButton'
+import PermissionGuard from '../../components/common/PermissionGuard'
+import { BUTTON_PERMISSIONS as BP, PERMISSIONS as P } from '../../config/permissions'
 
 function StudentList() {
   const navigate  = useNavigate()
@@ -227,10 +230,18 @@ function StudentList() {
                 )}
               </div>
             </div>
-            <button onClick={() => navigate('/admin/students/add')}
+            {/* <button onClick={() => navigate('/admin/students/add')}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium text-sm shadow-sm">
               <Plus className="w-4 h-4" /> Add New Student
-            </button>
+            </button> */}
+
+              <PermissionButton
+  permission={BP.student.add}
+  onClick={() => navigate('/admin/students/add')}
+  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium text-sm shadow-sm"
+>
+  <Plus className="w-4 h-4" /> Add New Student
+</PermissionButton>
           </div>
 
           {/* Search + Filter */}
@@ -433,18 +444,44 @@ function StudentList() {
                         {/* Actions */}
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1.5">
-                            <button onClick={() => handleViewStudent(student)}
+                            {/* <button onClick={() => handleViewStudent(student)}
                               className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition" title="View Details">
                               <Eye className="w-3.5 h-3.5 text-blue-600" />
-                            </button>
-                            <button onClick={() => navigate(`/admin/students/edit/${student.student_id}`)}
+                            </button> */
+                            
+                            <PermissionButton
+  permission={BP.student.view}
+  onClick={() => handleViewStudent(student)}
+  className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+>
+  <Eye className="w-3.5 h-3.5 text-blue-600" />
+</PermissionButton>}
+                            {/* <button onClick={() => navigate(`/admin/students/edit/${student.student_id}`)}
                               className="p-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition" title="Edit">
                               <Edit className="w-3.5 h-3.5 text-green-600" />
-                            </button>
-                            <button onClick={() => handleDeleteClick(student)}
+                            </button> */}
+
+
+                            <PermissionButton
+  permission={BP.student.edit}
+  onClick={() => navigate(`/admin/students/edit/${student.student_id}`)}
+  className="p-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition"
+>
+  <Edit className="w-3.5 h-3.5 text-green-600" />
+</PermissionButton>
+                            {/* <button onClick={() => handleDeleteClick(student)}
                               className="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition" title="Delete">
                               <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                            </button>
+                            </button> */}
+
+<PermissionButton
+  permission={BP.student.delete}
+  onClick={() => handleDeleteClick(student)}
+  className="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition"
+>
+  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+</PermissionButton>
+
                           </div>
                         </td>
                       </tr>
