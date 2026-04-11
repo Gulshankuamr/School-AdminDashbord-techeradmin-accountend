@@ -6,6 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+C:\Users\HP\Desktop\LiveProject\AlldasbordErp\src\config\firebaseConfig.js*
+C:\Users\HP\Desktop\LiveProject\AlldasbordErp\public\firebase-messaging-sw.js
 
 node_modules
 dist
