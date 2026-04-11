@@ -11,30 +11,30 @@ import PermissionGuard from '../../components/common/PermissionGuard'
 import { BUTTON_PERMISSIONS as BP, PERMISSIONS as P } from '../../config/permissions'
 
 function StudentList() {
-  const navigate  = useNavigate()
-  const location  = useLocation()
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const [students, setStudents]           = useState([])
-  const [page, setPage]                   = useState(1)
-  const [totalPages, setTotalPages]       = useState(1)
+  const [students, setStudents] = useState([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [totalStudents, setTotalStudents] = useState(0)
-  const [loading, setLoading]             = useState(true)
-  const [error, setError]                 = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const [searchInput, setSearchInput]         = useState('')
-  const [search, setSearch]                   = useState('')
-  const [filterClassId, setFilterClassId]     = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [filterClassId, setFilterClassId] = useState('')
   const [filterSectionId, setFilterSectionId] = useState('')
-  const [classes, setClasses]                 = useState([])
-  const [sections, setSections]               = useState([])
-  const [loadingClasses, setLoadingClasses]   = useState(false)
+  const [classes, setClasses] = useState([])
+  const [sections, setSections] = useState([])
+  const [loadingClasses, setLoadingClasses] = useState(false)
   const [loadingSections, setLoadingSections] = useState(false)
 
-  const [isModalOpen, setIsModalOpen]           = useState(false)
-  const [selectedStudent, setSelectedStudent]   = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [studentToDelete, setStudentToDelete]   = useState(null)
-  const [deleting, setDeleting]                 = useState(false)
+  const [studentToDelete, setStudentToDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const searchDebounceRef = useRef(null)
 
@@ -75,7 +75,7 @@ function StudentList() {
       console.log('📋 Students API response:', res)
 
       const list = Array.isArray(res.data) ? res.data : []
-      const pag  = res.pagination || {}
+      const pag = res.pagination || {}
 
       setStudents(list)
       setPage(Number(pag.page) || pageNum)
@@ -145,7 +145,7 @@ function StudentList() {
   const closeModal = () => { setIsModalOpen(false); setSelectedStudent(null) }
 
   const handleDeleteFromModal = (student) => { closeModal(); setStudentToDelete(student); setShowDeleteConfirm(true) }
-  const handleDeleteClick     = (student) => { setStudentToDelete(student); setShowDeleteConfirm(true) }
+  const handleDeleteClick = (student) => { setStudentToDelete(student); setShowDeleteConfirm(true) }
 
   const confirmDelete = async () => {
     if (!studentToDelete) return
@@ -235,13 +235,13 @@ function StudentList() {
               <Plus className="w-4 h-4" /> Add New Student
             </button> */}
 
-              <PermissionButton
-  permission={BP.student.add}
-  onClick={() => navigate('/admin/students/add')}
-  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium text-sm shadow-sm"
->
-  <Plus className="w-4 h-4" /> Add New Student
-</PermissionButton>
+            <PermissionButton
+              permission={BP.student.add}
+              onClick={() => navigate('/admin/students/add')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 font-medium text-sm shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Add New Student
+            </PermissionButton>
           </div>
 
           {/* Search + Filter */}
@@ -448,14 +448,14 @@ function StudentList() {
                               className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition" title="View Details">
                               <Eye className="w-3.5 h-3.5 text-blue-600" />
                             </button> */
-                            
-                            <PermissionButton
-  permission={BP.student.view}
-  onClick={() => handleViewStudent(student)}
-  className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
->
-  <Eye className="w-3.5 h-3.5 text-blue-600" />
-</PermissionButton>}
+
+                              <PermissionButton
+                                permission={BP.student.view}
+                                onClick={() => handleViewStudent(student)}
+                                className="p-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-blue-600" />
+                              </PermissionButton>}
                             {/* <button onClick={() => navigate(`/admin/students/edit/${student.student_id}`)}
                               className="p-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition" title="Edit">
                               <Edit className="w-3.5 h-3.5 text-green-600" />
@@ -463,24 +463,24 @@ function StudentList() {
 
 
                             <PermissionButton
-  permission={BP.student.edit}
-  onClick={() => navigate(`/admin/students/edit/${student.student_id}`)}
-  className="p-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition"
->
-  <Edit className="w-3.5 h-3.5 text-green-600" />
-</PermissionButton>
+                              permission={BP.student.edit}
+                              onClick={() => navigate(`/admin/students/edit/${student.student_id}`)}
+                              className="p-1.5 bg-green-50 hover:bg-green-100 rounded-lg transition"
+                            >
+                              <Edit className="w-3.5 h-3.5 text-green-600" />
+                            </PermissionButton>
                             {/* <button onClick={() => handleDeleteClick(student)}
                               className="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition" title="Delete">
                               <Trash2 className="w-3.5 h-3.5 text-red-600" />
                             </button> */}
 
-<PermissionButton
-  permission={BP.student.delete}
-  onClick={() => handleDeleteClick(student)}
-  className="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition"
->
-  <Trash2 className="w-3.5 h-3.5 text-red-600" />
-</PermissionButton>
+                            <PermissionButton
+                              permission={BP.student.delete}
+                              onClick={() => handleDeleteClick(student)}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            </PermissionButton>
 
                           </div>
                         </td>
@@ -497,7 +497,7 @@ function StudentList() {
                 <p className="text-xs text-gray-500">
                   {totalPages > 1 && (
                     <>Page <span className="font-semibold text-gray-700">{page}</span> of{' '}
-                    <span className="font-semibold text-gray-700">{totalPages}</span> · </>
+                      <span className="font-semibold text-gray-700">{totalPages}</span> · </>
                   )}
                   <span className="text-gray-500">{totalStudents} student{totalStudents !== 1 ? 's' : ''}</span>
                 </p>

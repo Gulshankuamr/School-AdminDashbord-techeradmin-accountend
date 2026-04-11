@@ -1,26 +1,28 @@
 // context/NotificationContext.jsx
 // ─────────────────────────────────────────────────────────────────────────────
-// FIX SUMMARY:
-//   • markAsRead (single) → local state + calls markAllAsRead API in background
-//   • refreshUnreadCount  → re-fetches from server (real count)
-//   • 30s polling stays active
+// CHANGES (Firebase Push added):
+//   • messaging + onMessage imported from firebaseConfig
+//   • foreground push → addPushNotification() se bell badge update
+//   • pushNotifications state alag rakha (in-app toasts ke liye)
+//   • baaki sab same — markAsRead, markAllAsRead, polling, etc.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
-import { notificationService } from '../services/notificationService/notificationService';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { useAuth } from './AuthContext'
+import { notificationService } from '../services/notificationService/notificationService'
+import { messaging, onMessage } from '../config/firebaseConfig'  // 🔥 NEW
 
-const NotificationContext = createContext();
+const NotificationContext = createContext()
 
 export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (!context) throw new Error('useNotifications must be used within NotificationProvider');
-  return context;
-};
+  const context = useContext(NotificationContext)
+  if (!context) throw new Error('useNotifications must be used within NotificationProvider')
+  return context
+}
 
 // ── Normalise one item from getMyNotifications ────────────────────────────────
 const normalise = (n) => {
-  if (!n || typeof n !== 'object') return null;
+  if (!n || typeof n !== 'object') return null
   return {
     id:          n.notification_id ?? n.id,
     title:       n.title           ?? 'No Title',
@@ -32,132 +34,281 @@ const normalise = (n) => {
     senderName:  n.sender_name     ?? '',
     senderRole:  n.sender_role     ?? '',
     senderEmail: n.sender_email    ?? '',
-  };
-};
+  }
+}
 
 export const NotificationProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user } = useAuth()
 
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount,   setUnreadCount]   = useState(0);
-  const [loading,       setLoading]       = useState(false);
-  const [error,         setError]         = useState(null);
+  const [notifications,     setNotifications]     = useState([])
+  const [unreadCount,       setUnreadCount]       = useState(0)
+  const [loading,           setLoading]           = useState(false)
+  const [error,             setError]             = useState(null)
+
+  // 🔥 NEW: foreground push notifications (in-app toast ke liye)
+  const [pushNotifications, setPushNotifications] = useState([])
 
   // ── Fetch recipient inbox ──────────────────────────────────────────────────
   const fetchNotifications = useCallback(async ({ page = 1, limit = 50, is_read } = {}) => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
+    if (!user) return
+    setLoading(true)
+    setError(null)
     try {
-      const res  = await notificationService.getMyNotifications({ page, limit, is_read });
-      const data = res?.data ?? {};
-      const raw  = Array.isArray(data.notifications) ? data.notifications : [];
-      const normalised = raw.map(normalise).filter(Boolean);
-      setNotifications(normalised);
-      // ✅ Always use server's unread_count as source of truth
-      setUnreadCount(data.unread_count ?? 0);
+      const res  = await notificationService.getMyNotifications({ page, limit, is_read })
+      const data = res?.data ?? {}
+      const raw  = Array.isArray(data.notifications) ? data.notifications : []
+      const normalised = raw.map(normalise).filter(Boolean)
+      setNotifications(normalised)
+      setUnreadCount(data.unread_count ?? 0)
     } catch (err) {
-      console.error('Error fetching notifications:', err);
-      setError(err.message);
+      console.error('Error fetching notifications:', err)
+      setError(err.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [user]);
+  }, [user])
 
   // ── Refresh only unread count (lightweight poll) ───────────────────────────
   const refreshUnreadCount = useCallback(async () => {
-    if (!user) return;
+    if (!user) return
     try {
-      const res   = await notificationService.getMyNotifications({ page: 1, limit: 1 });
-      const count = res?.data?.unread_count ?? 0;
-      // ✅ Update from server — this ensures navbar badge is always accurate
-      setUnreadCount(count);
+      const res   = await notificationService.getMyNotifications({ page: 1, limit: 1 })
+      const count = res?.data?.unread_count ?? 0
+      setUnreadCount(count)
     } catch {
-      // silent — badge not critical
+      // silent
     }
-  }, [user]);
+  }, [user])
 
   // ── Mark single as read ────────────────────────────────────────────────────
-  // Since /markNotificationRead endpoint is 404, we:
-  //   1. Update local UI immediately (optimistic)
-  //   2. Call markAllAsRead API in background so server stays in sync
-  //   3. Refresh unread count from server after API call
   const markAsRead = useCallback(async (notificationId) => {
-    // Step 1: Immediate local UI update
     setNotifications(prev =>
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    )
+    setUnreadCount(prev => Math.max(0, prev - 1))
 
-    // Step 2: Sync with server in background
     try {
-      await notificationService.markAllAsRead();
-      // Step 3: Re-fetch real count from server
-      await refreshUnreadCount();
+      await notificationService.markAllAsRead()
+      await refreshUnreadCount()
     } catch (err) {
-      console.error('Background markAllAsRead failed:', err);
-      // Local state is already updated — UI stays correct
-      // Next poll (30s) will re-sync automatically
+      console.error('Background markAllAsRead failed:', err)
     }
-  }, [refreshUnreadCount]);
+  }, [refreshUnreadCount])
 
-  // ── Mark ALL as read — API call (PUT /markAllAsRead) ──────────────────────
+  // ── Mark ALL as read ───────────────────────────────────────────────────────
   const markAllAsRead = useCallback(async () => {
     try {
-      await notificationService.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
+      await notificationService.markAllAsRead()
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      setUnreadCount(0)
     } catch (err) {
-      console.error('Error marking all as read:', err);
-      throw err;
+      console.error('Error marking all as read:', err)
+      throw err
     }
-  }, []);
+  }, [])
 
   // ── Delete notification ────────────────────────────────────────────────────
   const deleteNotification = useCallback(async (notificationId) => {
     try {
-      await notificationService.deleteNotification(notificationId);
-      const wasUnread = notifications.find(n => n.id === notificationId)?.read === false;
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      await notificationService.deleteNotification(notificationId)
+      const wasUnread = notifications.find(n => n.id === notificationId)?.read === false
+      setNotifications(prev => prev.filter(n => n.id !== notificationId))
       if (wasUnread) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-        // Sync count with server
-        await refreshUnreadCount();
+        setUnreadCount(prev => Math.max(0, prev - 1))
+        await refreshUnreadCount()
       }
     } catch (err) {
-      console.error('Error deleting notification:', err);
-      throw err;
+      console.error('Error deleting notification:', err)
+      throw err
     }
-  }, [notifications, refreshUnreadCount]);
+  }, [notifications, refreshUnreadCount])
 
   // ── Initial load + 30s poll ────────────────────────────────────────────────
   useEffect(() => {
     if (!user) {
-      setNotifications([]);
-      setUnreadCount(0);
-      return;
+      setNotifications([])
+      setUnreadCount(0)
+      return
     }
-    fetchNotifications();
-    const interval = setInterval(refreshUnreadCount, 30_000);
-    return () => clearInterval(interval);
-  }, [user, fetchNotifications, refreshUnreadCount]);
+    fetchNotifications()
+    const interval = setInterval(refreshUnreadCount, 30_000)
+    return () => clearInterval(interval)
+  }, [user, fetchNotifications, refreshUnreadCount])
+
+  // ── 🔥 NEW: Firebase foreground push listener ──────────────────────────────
+  // App khuli ho tab push aaye → bell badge update + in-app toast
+  useEffect(() => {
+    if (!user) return
+
+    let unsubscribe = null
+
+    try {
+      unsubscribe = onMessage(messaging, (payload) => {
+        console.log('Foreground push received:', payload)
+
+        const newPush = {
+          id:        Date.now(),
+          title:     payload.notification?.title || 'New Notification',
+          message:   payload.notification?.body  || '',
+          createdAt: new Date().toISOString(),
+          read:      false,
+        }
+
+        // In-app push toast list mein add karo
+        setPushNotifications(prev => [newPush, ...prev])
+
+        // 🔔 Navbar badge increment karo (server se re-fetch)
+        refreshUnreadCount()
+
+        // Notification list bhi refresh karo
+        fetchNotifications()
+      })
+    } catch (err) {
+      // Agar firebase messaging browser mein support nahi karta (e.g. Safari)
+      console.warn('Firebase messaging not supported or failed:', err)
+    }
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
+  }, [user, refreshUnreadCount, fetchNotifications])
+
+  // ── 🔥 NEW: Push toast dismiss karo ───────────────────────────────────────
+  const dismissPushNotification = useCallback((id) => {
+    setPushNotifications(prev => prev.filter(n => n.id !== id))
+  }, [])
 
   const value = {
     notifications,
     unreadCount,
     loading,
     error,
-    markAsRead,           // local update + background markAllAsRead API
-    markAllAsRead,        // API call (PUT /markAllAsRead)
+    markAsRead,
+    markAllAsRead,
     deleteNotification,
     fetchNotifications,
     refreshUnreadCount,
     refetch: fetchNotifications,
-  };
+    // 🔥 NEW
+    pushNotifications,
+    dismissPushNotification,
+  }
 
   return (
     <NotificationContext.Provider value={value}>
       {children}
+      {/* 🔥 NEW: Foreground push toast UI */}
+      <PushToastContainer
+        toasts={pushNotifications}
+        onDismiss={dismissPushNotification}
+      />
     </NotificationContext.Provider>
-  );
-};
+  )
+}
+
+// ── 🔥 NEW: Push Toast UI Component ───────────────────────────────────────────
+// Jab app khuli ho aur push aaye → right corner mein toast dikhega
+const PushToastContainer = ({ toasts, onDismiss }) => {
+  if (!toasts || toasts.length === 0) return null
+
+  return (
+    <div
+      style={{
+        position:  'fixed',
+        top:       '80px',
+        right:     '20px',
+        zIndex:    99999,
+        display:   'flex',
+        flexDirection: 'column',
+        gap:       '10px',
+        maxWidth:  '340px',
+        width:     '100%',
+      }}
+    >
+      {toasts.slice(0, 3).map((toast) => (
+        <PushToast key={toast.id} toast={toast} onDismiss={onDismiss} />
+      ))}
+    </div>
+  )
+}
+
+const PushToast = ({ toast, onDismiss }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => onDismiss(toast.id), 6000)
+    return () => clearTimeout(timer)
+  }, [toast.id, onDismiss])
+
+  return (
+    <div
+      style={{
+        background:   '#ffffff',
+        border:       '1px solid #e5e7eb',
+        borderLeft:   '4px solid #f97316',
+        borderRadius: '12px',
+        padding:      '14px 16px',
+        boxShadow:    '0 10px 40px rgba(0,0,0,0.12)',
+        display:      'flex',
+        alignItems:   'flex-start',
+        gap:          '12px',
+        animation:    'pushToastIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
+      }}
+    >
+      {/* Bell icon */}
+      <div
+        style={{
+          width:           '36px',
+          height:          '36px',
+          background:      '#fff7ed',
+          borderRadius:    '8px',
+          display:         'flex',
+          alignItems:      'center',
+          justifyContent:  'center',
+          flexShrink:      0,
+          fontSize:        '18px',
+        }}
+      >
+        🔔
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontWeight: 600, fontSize: '13px', color: '#111827', margin: 0, lineHeight: 1.4 }}>
+          {toast.title}
+        </p>
+        {toast.message && (
+          <p style={{ fontSize: '12px', color: '#6b7280', margin: '3px 0 0', lineHeight: 1.4,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {toast.message}
+          </p>
+        )}
+        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0' }}>
+          Just now
+        </p>
+      </div>
+
+      {/* Close button */}
+      <button
+        onClick={() => onDismiss(toast.id)}
+        style={{
+          background: 'none',
+          border:     'none',
+          cursor:     'pointer',
+          padding:    '2px',
+          color:      '#9ca3af',
+          fontSize:   '16px',
+          lineHeight: 1,
+          flexShrink: 0,
+        }}
+      >
+        ✕
+      </button>
+
+      <style>{`
+        @keyframes pushToastIn {
+          from { opacity: 0; transform: translateX(40px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+    </div>
+  )
+}
